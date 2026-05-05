@@ -201,7 +201,11 @@ export const usePickerStore = create((set, get) => ({
   },
 
   selectAll: () => {
-    const { images, currentPage, gridSize, targetCount } = get();
+    if (get().tournamentComplete) {
+      return;
+    }
+
+    const { images, currentPage, gridSize } = get();
     if (images.length === 0) {
       return;
     }
@@ -209,34 +213,20 @@ export const usePickerStore = create((set, get) => ({
     const start = currentPage * gridSize;
     const end = Math.min(start + gridSize, images.length);
 
-    const visibleUnselected = [];
-    for (let i = start; i < end; i++) {
-      if (!images[i].selected) {
-        visibleUnselected.push(i);
+    let changed = false;
+    const nextImages = images.map((image, i) => {
+      if (i >= start && i < end && !image.selected) {
+        changed = true;
+        return { ...image, selected: true };
       }
-    }
+      return image;
+    });
 
-    if (visibleUnselected.length === 0) {
-      return;
-    }
-
-    const selectedTotal = images.filter((image) => image.selected).length;
-    const slots =
-      targetCount > 0
-        ? Math.max(0, targetCount - selectedTotal)
-        : visibleUnselected.length;
-
-    const toAdd = Math.min(slots, visibleUnselected.length);
-    if (toAdd === 0) {
+    if (!changed) {
       return;
     }
 
     get().pushHistory();
-    const nextImages = [...images];
-    for (let i = 0; i < toAdd; i++) {
-      const idx = visibleUnselected[i];
-      nextImages[idx] = { ...nextImages[idx], selected: true };
-    }
     set({ images: nextImages });
   },
 
