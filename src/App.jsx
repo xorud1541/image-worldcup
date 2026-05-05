@@ -47,6 +47,8 @@ function App() {
     closeLoupe,
     exportZip,
     tournamentComplete,
+    currentRound,
+    advanceRound,
   } = usePickerStore();
 
   const visibleImages = usePickerStore((state) => state.getVisibleImages());
@@ -238,6 +240,11 @@ function App() {
 
         <div className="topbar-center">
           <div className="progress">
+            {!tournamentComplete ? (
+              <span className="round-badge" aria-label={`라운드 ${currentRound}`}>
+                Round {currentRound}
+              </span>
+            ) : null}
             <div className="progress-track">
               <div className="progress-fill" style={{ width: `${completion}%` }} />
             </div>
@@ -304,6 +311,20 @@ function App() {
             title="현재 페이지의 선택 해제"
           >
             해제
+          </button>
+          <button
+            className="btn primary"
+            type="button"
+            onClick={advanceRound}
+            disabled={
+              !hasImages ||
+              tournamentComplete ||
+              selectedCount === 0 ||
+              selectedCount === images.length
+            }
+            title="선택한 사진들로 다음 라운드 진행"
+          >
+            다음 라운드
           </button>
           <span className="topbar-divider" aria-hidden="true" />
           <button
@@ -453,6 +474,27 @@ function App() {
 
         {!loading && hasImages ? (
           <>
+            {tournamentComplete ? (
+              <div className="complete-banner" role="status">
+                <span className="complete-title">🏆 토너먼트 완료</span>
+                <span className="complete-meta">
+                  Round {currentRound - 1} 끝 — 최종 {images.length}장 선택됨
+                </span>
+                <div className="complete-actions">
+                  <button
+                    className="btn primary"
+                    type="button"
+                    onClick={exportZip}
+                    disabled={zipStatus === "running"}
+                  >
+                    ZIP으로 내보내기
+                  </button>
+                  <button className="btn" type="button" onClick={clearAll}>
+                    다시 시작
+                  </button>
+                </div>
+              </div>
+            ) : null}
             <div
               className={`grid grid-${gridSize}`}
               role="grid"
