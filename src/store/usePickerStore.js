@@ -180,27 +180,21 @@ export const usePickerStore = create((set, get) => ({
   },
 
   toggleByVisibleIndex: (visibleIndex) => {
-    const { images, currentPage, gridSize, targetCount } = get();
+    if (get().tournamentComplete) {
+      return;
+    }
+
+    const { images, currentPage, gridSize } = get();
     const absoluteIndex = currentPage * gridSize + visibleIndex;
     if (!images[absoluteIndex]) {
       return;
     }
 
-    const target = images[absoluteIndex];
-    const willSelect = !target.selected;
-
-    if (willSelect && targetCount > 0) {
-      const selectedTotal = images.filter((image) => image.selected).length;
-      if (selectedTotal >= targetCount) {
-        return;
-      }
-    }
-
     get().pushHistory();
     const nextImages = [...images];
     nextImages[absoluteIndex] = {
-      ...target,
-      selected: willSelect,
+      ...nextImages[absoluteIndex],
+      selected: !nextImages[absoluteIndex].selected,
     };
 
     set({ images: nextImages, focusedIndex: visibleIndex });
