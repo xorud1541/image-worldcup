@@ -53,6 +53,7 @@ function App() {
   const totalPages = Math.max(1, Math.ceil(images.length / gridSize));
   const selectedCount = images.filter((image) => image.selected).length;
   const completion = targetCount > 0 ? Math.min((selectedCount / targetCount) * 100, 100) : 0;
+  const atCap = targetCount > 0 && selectedCount >= targetCount;
   const focusedImage = visibleImages[focusedIndex] || visibleImages[0];
   const loupeImage =
     hoverIndexRef.current != null ? visibleImages[hoverIndexRef.current] : focusedImage;
@@ -287,8 +288,8 @@ function App() {
             className="icon-btn"
             type="button"
             onClick={selectAll}
-            disabled={!hasImages}
-            title="모두 선택"
+            disabled={!hasImages || atCap}
+            title="현재 페이지의 모든 사진 선택"
           >
             모두 선택
           </button>
@@ -297,7 +298,7 @@ function App() {
             type="button"
             onClick={clearSelections}
             disabled={selectedCount === 0}
-            title="선택 모두 해제"
+            title="현재 페이지의 선택 해제"
           >
             해제
           </button>
@@ -462,6 +463,7 @@ function App() {
                     "tile",
                     image.selected ? "selected" : "",
                     index === focusedIndex ? "focused" : "",
+                    !image.selected && atCap ? "cap-blocked" : "",
                   ].join(" ")}
                   onClick={() => toggleByVisibleIndex(index)}
                   onFocus={() => setFocusedIndex(index)}

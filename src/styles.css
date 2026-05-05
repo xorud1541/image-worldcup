@@ -677,7 +677,6 @@ kbd {
   text-align: center;
   font-size: 12px;
   color: #6a6a6a;
-  border-top: 1px solid #ececec;
   background: #fafafa;
 }
 
@@ -783,4 +782,9 @@ kbd {
   gap: 4px;
   font-size: 13px;
   color: #4a4a4a;
+}
+
+.tile.cap-blocked {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
