@@ -315,7 +315,7 @@ EOF
 
 (`disabled` 조건은 그대로 유지.)
 
-- [ ] **Step 5: `.tile-cap-blocked` CSS 추가 + footer border 제거**
+- [ ] **Step 5: `.tile.cap-blocked` CSS 추가 + footer border 제거**
 
 `src/styles.css`:
 
@@ -356,23 +356,6 @@ feat: visualize target cap state and remove footer border
 - Disable selectAll button at cap
 - Update select/clear button tooltips for page-scoped semantics
 - Drop footer top border so it blends with page background
-EOF
-)"
-```
-
-(commit 메시지 본문은 다중 변경을 한 줄에 넣기 어려워 multiline body 형태로. trailer 는 자동 추가되지 않으므로 끝에 `Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>` 한 줄 추가하려면 위 heredoc 안의 마지막에 빈 줄과 함께 넣을 것.)
-
-수정된 commit 메시지:
-
-```bash
-git add src/App.jsx src/styles.css
-git commit -m "$(cat <<'EOF'
-feat: visualize target cap state and remove footer border
-
-- Show grid tiles dimmed/not-allowed when at target count
-- Disable selectAll button at cap
-- Update select/clear button tooltips for page-scoped semantics
-- Drop footer top border so it blends with page background
 
 Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>
 EOF
@@ -394,7 +377,7 @@ Run: `npm run dev`. 다음 시나리오 통과 여부 점검:
 
 1. **Visible-only selectAll**: 첫 페이지에서 "모두 선택" → 첫 페이지만 선택. 페이지 이동 후 동일 동작 — 이전 페이지 선택 유지.
 2. **Visible-only clearSelections**: 첫 페이지 일부 선택 + 다음 페이지 일부 선택 → 첫 페이지에서 "선택 모두 해제" → 첫 페이지만 해제, 다음 페이지 선택 유지.
-3. **Cap silent block**: 목표 5 설정 + 5장 선택 → 미선택 사진 클릭 → 아무 일도 안 일어남. 키보드 1~9 / Enter / S 도 모두 차단.
+3. **Cap silent block**: 목표 5 설정 + 5장 선택 → **미선택** 사진 클릭 → 아무 일도 안 일어남. 미선택 타일을 향한 키보드 입력 (1~9 / Enter / S) 도 동일하게 차단. 단, **이미 선택된** 타일은 키보드/클릭 어느 쪽이든 항상 해제 가능.
 4. **Cap visual signal**: 위 상태의 미선택 타일들이 `opacity: 0.5` + `cursor: not-allowed`. 선택된 타일은 정상.
 5. **Cap recovery**: 선택된 타일 한 장 해제 → 즉시 cap 풀림, 시각/동작 모두 정상.
 6. **Cap with target=0**: 직접 입력으로 0 설정 → cap 동작 없음 (무제한 선택, 시각 disabled 없음).
