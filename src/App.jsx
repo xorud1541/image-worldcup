@@ -222,7 +222,7 @@ function App() {
 
       <header className="topbar">
         <div className="topbar-left">
-          <span className="brand">Wedding Pick</span>
+          <span className="brand">ohmyweddingday</span>
         </div>
 
         <div className="topbar-center">
