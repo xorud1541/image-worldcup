@@ -680,3 +680,55 @@ kbd {
   border-top: 1px solid #ececec;
   background: #fafafa;
 }
+
+.target-presets {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 4px;
+}
+
+.target-presets-label {
+  font-size: 13px;
+  color: #4a4a4a;
+  margin-right: 4px;
+}
+
+.preset-pill {
+  min-width: 40px;
+  padding: 6px 12px;
+  font-size: 13px;
+  border: 1px solid #d4d4d4;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #1a1a1a;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.preset-pill:hover {
+  background: #f3f3f3;
+}
+
+.preset-pill.active {
+  background: #1a1a1a;
+  border-color: #1a1a1a;
+  color: #ffffff;
+}
+
+.preset-input {
+  width: 96px;
+  padding: 6px 10px;
+  font-size: 13px;
+  border: 1px solid #d4d4d4;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #1a1a1a;
+}
+
+.preset-input:focus {
+  outline: none;
+  border-color: #1a1a1a;
+}

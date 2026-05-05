@@ -386,6 +386,32 @@ function App() {
           <div className="empty">
             <h2>사진을 불러와서 시작하세요</h2>
             <p className="muted">JPG, PNG, WebP 형식을 지원합니다.</p>
+
+            <div className="target-presets" role="group" aria-label="목표 수량">
+              <span className="target-presets-label">목표 수량</span>
+              {[10, 20, 30, 50].map((preset) => (
+                <button
+                  key={preset}
+                  type="button"
+                  className={preset === targetCount ? "preset-pill active" : "preset-pill"}
+                  onClick={() => setTargetCount(preset)}
+                >
+                  {preset}
+                </button>
+              ))}
+              <input
+                className="preset-input"
+                type="number"
+                min="0"
+                placeholder="직접 입력"
+                value={[10, 20, 30, 50].includes(targetCount) ? "" : targetCount}
+                onChange={(event) => {
+                  const value = Number(event.target.value);
+                  setTargetCount(Number.isNaN(value) ? 0 : Math.max(value, 0));
+                }}
+              />
+            </div>
+
             <div className="empty-actions">
               <button
                 type="button"
