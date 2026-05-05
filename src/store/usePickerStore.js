@@ -10,6 +10,8 @@ function buildSnapshot(state) {
     currentPage: state.currentPage,
     focusedIndex: state.focusedIndex,
     targetCount: state.targetCount,
+    currentRound: state.currentRound,
+    tournamentComplete: state.tournamentComplete,
   };
 }
 
@@ -19,6 +21,8 @@ function restoreSnapshot(snapshot) {
     currentPage: snapshot.currentPage,
     focusedIndex: snapshot.focusedIndex,
     targetCount: snapshot.targetCount,
+    currentRound: snapshot.currentRound,
+    tournamentComplete: snapshot.tournamentComplete,
   };
 }
 
@@ -35,6 +39,8 @@ export const usePickerStore = create((set, get) => ({
   zipStatus: "idle",
   zipProgress: 0,
   error: "",
+  currentRound: 1,
+  tournamentComplete: false,
   history: [],
 
   loadFiles: async (files, unsupportedFiles) => {
@@ -51,6 +57,8 @@ export const usePickerStore = create((set, get) => ({
       zipStatus: "idle",
       zipProgress: 0,
       error: "",
+      currentRound: 1,
+      tournamentComplete: false,
       history: [],
     });
 
@@ -82,6 +90,8 @@ export const usePickerStore = create((set, get) => ({
       zipStatus: "idle",
       zipProgress: 0,
       error: "",
+      currentRound: 1,
+      tournamentComplete: false,
       history: [],
     });
   },
@@ -258,6 +268,40 @@ export const usePickerStore = create((set, get) => ({
 
     get().pushHistory();
     set({ images: nextImages });
+  },
+
+  advanceRound: () => {
+    const { images, targetCount, tournamentComplete } = get();
+    if (tournamentComplete) {
+      return;
+    }
+    if (images.length === 0) {
+      return;
+    }
+
+    const selected = images.filter((image) => image.selected);
+    if (selected.length === 0) {
+      return;
+    }
+    if (selected.length === images.length) {
+      return;
+    }
+
+    get().pushHistory();
+
+    const completed = targetCount > 0 && selected.length <= targetCount;
+    const nextImages = selected.map((image) => ({
+      ...image,
+      selected: completed,
+    }));
+
+    set({
+      images: nextImages,
+      currentPage: 0,
+      focusedIndex: 0,
+      currentRound: get().currentRound + 1,
+      tournamentComplete: completed,
+    });
   },
 
   toggleLoupe: () => {
