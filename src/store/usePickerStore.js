@@ -237,14 +237,29 @@ export const usePickerStore = create((set, get) => ({
   },
 
   clearSelections: () => {
-    if (get().images.length === 0) {
+    const { images, currentPage, gridSize } = get();
+    if (images.length === 0) {
+      return;
+    }
+
+    const start = currentPage * gridSize;
+    const end = Math.min(start + gridSize, images.length);
+
+    let changed = false;
+    const nextImages = images.map((image, i) => {
+      if (i >= start && i < end && image.selected) {
+        changed = true;
+        return { ...image, selected: false };
+      }
+      return image;
+    });
+
+    if (!changed) {
       return;
     }
 
     get().pushHistory();
-    set({
-      images: get().images.map((image) => ({ ...image, selected: false })),
-    });
+    set({ images: nextImages });
   },
 
   toggleLoupe: () => {
