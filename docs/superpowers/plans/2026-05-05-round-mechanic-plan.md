@@ -338,8 +338,11 @@ function restoreSnapshot(snapshot) {
 
     get().pushHistory();
 
-    const nextImages = selected.map((image) => ({ ...image, selected: false }));
-    const completed = targetCount > 0 && nextImages.length <= targetCount;
+    const completed = targetCount > 0 && selected.length <= targetCount;
+    const nextImages = selected.map((image) => ({
+      ...image,
+      selected: completed,
+    }));
 
     set({
       images: nextImages,
@@ -353,7 +356,8 @@ function restoreSnapshot(snapshot) {
 
 핵심:
 - 완료 lock, 빈 풀, 0 선택, 전체 선택 — 4가지 no-op 가드.
-- 새 풀은 선택된 것들의 **deep-copy** (`{ ...image, selected: false }`) — 원본 객체는 history snapshot 에 남아있어 undo 시 복원 가능.
+- 새 풀은 선택된 것들의 **deep-copy** — 원본 객체는 history snapshot 에 남아있어 undo 시 복원 가능.
+- **선택 상태**: 완료 시(`completed === true`) 새 풀의 모든 항목을 `selected: true` 로 유지 (최종 선택 = 풀 그 자체이므로 ZIP 내보내기가 정상 동작). 미완료 라운드 진행 시는 `selected: false` 로 리셋해 다음 라운드 자유 선택.
 - `revokePreviews` 호출 안 함 — undo 호환을 위해 ObjectURL 보존.
 - `currentPage`, `focusedIndex` 모두 0 으로.
 - 풀 크기가 목표 이하 (`targetCount > 0` 일 때만) 면 `tournamentComplete: true`.
@@ -425,17 +429,15 @@ disabled={!hasImages || visibleAllSelected || tournamentComplete}
 
 (`tournamentComplete` 추가로 완료 시 자동 비활성. 다음 task 에서 `tournamentComplete` 를 store 에서 destructure 해야 함 — 본 task 에서는 disable 조건만 작성, destructure 는 다음 task 6 와 묶을지 / 본 task 에 포함할지 결정. **본 task 에 포함** — `tournamentComplete` destructure 도 같이.)
 
-- [ ] **Step 4: store destructure 에 라운드 state 추가**
+- [ ] **Step 4: store destructure 에 `tournamentComplete` 만 추가**
 
-`usePickerStore()` 비구조화 (약 16-45 줄 부근) 에 다음 두 줄 추가:
+`usePickerStore()` 비구조화 (약 16-45 줄 부근) 에 다음 한 줄만 추가:
 
 ```jsx
-    currentRound,
     tournamentComplete,
-    advanceRound,
 ```
 
-위치는 알파벳 순 또는 기존 그룹화 따름 (현재 파일은 알파벳 순 아님 — 자연스러운 흐름이라면 `clearAll`, `releaseResources` 인근).
+(`currentRound` / `advanceRound` 는 Task 6 에서 UI 가 실제로 사용할 때 destructure 에 추가. ESLint `no-unused-vars` 회피 — 본 task 의 build 가 안전하게 통과.)
 
 - [ ] **Step 5: "해제" 버튼 disabled 에 `tournamentComplete` 추가**
 
@@ -475,6 +477,17 @@ EOF
 - Modify: `src/App.jsx`
 - Modify: `src/styles.css`
 
+- [ ] **Step 0: store destructure 에 `currentRound`, `advanceRound` 추가**
+
+Task 5 에서 `tournamentComplete` 만 추가했으므로, Task 6 에서 UI 가 사용할 두 이름을 마저 추가:
+
+```jsx
+    currentRound,
+    advanceRound,
+```
+
+`tournamentComplete` 옆/근처에. 본 task 의 다음 step 들이 둘 다 사용하므로 unused 경고 없음.
+
 - [ ] **Step 1: "다음 라운드" 버튼 추가**
 
 topbar 우측 그룹에서 "해제" 버튼과 `<span className="topbar-divider" aria-hidden="true" />` 사이 (Export 버튼 앞) 에 다음 추가:
@@ -500,12 +513,14 @@ topbar 우측 그룹에서 "해제" 버튼과 `<span className="topbar-divider" 
 
 - [ ] **Step 2: 라운드 카운터 배지 추가**
 
-`.progress` 컨테이너 (현재 약 229-263 줄 부근) 의 `<div className="progress-track">` **앞** 에 다음 추가:
+`.progress` 컨테이너 (현재 약 229-263 줄 부근) 의 `<div className="progress-track">` **앞** 에 다음 추가 (완료 시 숨김 — 배너의 `Round N-1` 표기와 헷갈리지 않게):
 
 ```jsx
-            <span className="round-badge" aria-label={`라운드 ${currentRound}`}>
-              Round {currentRound}
-            </span>
+            {!tournamentComplete ? (
+              <span className="round-badge" aria-label={`라운드 ${currentRound}`}>
+                Round {currentRound}
+              </span>
+            ) : null}
 ```
 
 위치 컨텍스트 (변경 후 progress 영역):
@@ -550,7 +565,7 @@ topbar 우측 그룹에서 "해제" 버튼과 `<span className="topbar-divider" 
         ) : null}
 ```
 
-위치 정확화: `{!loading && hasImages ? (` 의 `<>` 안 (그리드와 같은 본문 영역) **맨 위**. 그리드는 그대로 보이고 그 위에 배너.
+위치 정확화: `{!loading && hasImages ? (` 의 `<>` fragment 의 **첫 번째 자식**, 그리드 (`<div className="grid grid-N">`) 보다 **앞**. 배너는 `.stage` 의 `overflow: hidden` 안쪽이 아니라 같은 콘텐츠 영역의 위쪽에 위치하도록. 만약 빌드 후 시각 확인에서 배너가 잘리거나 그리드가 안 보이면 별도 wrapper `<div className="content-with-banner">` 로 감싸 flex column 처리.
 
 - [ ] **Step 4: CSS 추가 — `.tile.cap-blocked` 제거**
 
@@ -644,7 +659,8 @@ Run: `npm run dev`. 다음 점검:
 8. **Undo (Ctrl+Z)**: 라운드 전환 직후 Undo → 이전 풀 + 라운드 카운터 -1 + tournamentComplete 복원.
 9. **다시 시작**: "다시 시작" → 빈 상태로 (clearAll 동작), Round 1, 미완료.
 10. **새 사진 로드**: 진행 중 새 파일 업로드 → loadFiles 가 라운드/완료 리셋.
-11. **회귀**: 그리드 토글, Loupe, 단축키 모달, 릴리즈 모달, footer, ZIP 등 기존 기능 정상.
+11. **완료 시 ZIP 내용 검증**: 완료 후 "ZIP으로 내보내기" → 다운로드된 zip 안에 풀의 모든 사진 (즉 최종 선택) 이 포함되는지 직접 unzip 또는 archive viewer 로 확인. (단순히 "다운로드 됐다" 가 아니라 **파일 수가 풀 크기와 일치** 하는지.)
+12. **회귀**: 그리드 토글, Loupe, 단축키 모달, 릴리즈 모달, footer, ZIP 등 기존 기능 정상.
 
 - [ ] **Step 3: Push (수동, 사용자 측)**
 
