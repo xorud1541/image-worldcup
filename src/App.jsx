@@ -46,6 +46,7 @@ function App() {
     toggleLoupe,
     closeLoupe,
     exportZip,
+    tournamentComplete,
   } = usePickerStore();
 
   const visibleImages = usePickerStore((state) => state.getVisibleImages());
@@ -53,7 +54,6 @@ function App() {
   const totalPages = Math.max(1, Math.ceil(images.length / gridSize));
   const selectedCount = images.filter((image) => image.selected).length;
   const completion = targetCount > 0 ? Math.min((selectedCount / targetCount) * 100, 100) : 0;
-  const atCap = targetCount > 0 && selectedCount >= targetCount;
   const visibleSelectedCount = visibleImages.filter((image) => image.selected).length;
   const visibleAllSelected =
     visibleImages.length > 0 && visibleSelectedCount === visibleImages.length;
@@ -291,7 +291,7 @@ function App() {
             className="icon-btn"
             type="button"
             onClick={selectAll}
-            disabled={!hasImages || atCap || visibleAllSelected}
+            disabled={!hasImages || visibleAllSelected || tournamentComplete}
             title="현재 페이지의 모든 사진 선택"
           >
             모두 선택
@@ -300,7 +300,7 @@ function App() {
             className="icon-btn"
             type="button"
             onClick={clearSelections}
-            disabled={visibleSelectedCount === 0}
+            disabled={visibleSelectedCount === 0 || tournamentComplete}
             title="현재 페이지의 선택 해제"
           >
             해제
@@ -466,7 +466,6 @@ function App() {
                     "tile",
                     image.selected ? "selected" : "",
                     index === focusedIndex ? "focused" : "",
-                    !image.selected && atCap ? "cap-blocked" : "",
                   ].join(" ")}
                   onClick={() => toggleByVisibleIndex(index)}
                   onFocus={() => setFocusedIndex(index)}
