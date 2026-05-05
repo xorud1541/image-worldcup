@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { classifyFiles } from "./lib/fileUtils";
 import { gridOptions, usePickerStore } from "./store/usePickerStore";
 
+const TARGET_PRESETS = [10, 20, 30, 50];
+
 function App() {
   const fileInputRef = useRef(null);
   const folderInputRef = useRef(null);
@@ -389,7 +391,7 @@ function App() {
 
             <div className="target-presets" role="group" aria-label="목표 수량">
               <span className="target-presets-label">목표 수량</span>
-              {[10, 20, 30, 50].map((preset) => (
+              {TARGET_PRESETS.map((preset) => (
                 <button
                   key={preset}
                   type="button"
@@ -404,7 +406,7 @@ function App() {
                 type="number"
                 min="0"
                 placeholder="직접 입력"
-                value={[10, 20, 30, 50].includes(targetCount) ? "" : targetCount}
+                value={TARGET_PRESETS.includes(targetCount) ? "" : targetCount}
                 onChange={(event) => {
                   const value = Number(event.target.value);
                   setTargetCount(Number.isNaN(value) ? 0 : Math.max(value, 0));
