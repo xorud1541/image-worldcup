@@ -554,6 +554,9 @@ function App() {
           </div>
         </div>
       ) : null}
+      <footer className="app-footer">
+        사진은 서버에 전송되지 않습니다.
+      </footer>
     </div>
   );
 }
