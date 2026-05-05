@@ -231,6 +231,10 @@ export const usePickerStore = create((set, get) => ({
   },
 
   clearSelections: () => {
+    if (get().tournamentComplete) {
+      return;
+    }
+
     const { images, currentPage, gridSize } = get();
     if (images.length === 0) {
       return;
