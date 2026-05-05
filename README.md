@@ -33,19 +33,15 @@ npm run build
 이 앱은 Vercel에서 정적 Vite SPA로 배포합니다. GitHub 저장소를 Vercel 프로젝트에 연결하면 `main` 브랜치에 push 또는 merge될 때 production 배포가 실행되고, PR이나 연결된 브랜치 push마다 preview 배포가 생성됩니다.
 
 - Hosting provider: Vercel
-- Production URL: `<project>.vercel.app` (첫 배포 후 실제 URL로 교체)
+- Production URL: https://ohmyweddingday.com (Vercel 기본 도메인 `image-worldcup.vercel.app`도 동일 사이트로 라우팅)
 - Framework preset: Vite
 - Build command: `npm run build`
 - Output directory: `dist`
 - Build gate: `npm run build`가 `eslint . && vite build`를 실행하므로 lint 실패 시 배포가 중단됩니다.
 
-### 환경 변수
+### 분석
 
-| Variable | Scope | Required | Purpose |
-|---|---|---|---|
-| `VITE_GA4_MEASUREMENT_ID` | Vercel Production only | Yes for analytics, no for app runtime | 공개 production 사이트에서만 GA4를 로드합니다. |
-
-Preview와 local development에는 `VITE_GA4_MEASUREMENT_ID`를 설정하지 않아 GA4 트래픽이 섞이지 않도록 합니다. 예시 값은 `.env.example`에 있습니다.
+GA4 측정 ID(`G-VF85MV3534`)는 `index.html`의 canonical gtag 스니펫에 인라인으로 박혀있어 모든 환경에서 동일 속성으로 데이터가 전송됩니다.
 
 ### 롤백
 
