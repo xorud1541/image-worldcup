@@ -111,7 +111,7 @@ Expected: PASS.
 - [ ] **Step 4: 수동 확인 (옵션)**
 
 Run: `npm run dev`
-Expected: 페이지 하단에 회색조 작은 텍스트로 "사진은 서버에 전송되지 않습니다." 가 보인다. 모달이 열려있어도, 빈 상태에서도, 사진 로드 후에도 항상 보인다. dev 서버 종료(Ctrl+C).
+Expected: 페이지 하단에 회색조 작은 텍스트로 "사진은 서버에 전송되지 않습니다." 가 보인다. 빈 상태에서도, 사진 로드 후에도 항상 보인다. (참고: 모달/Loupe 가 열려있을 때는 풀스크린 백드롭이 footer 위에 깔리므로 가려지는 것이 정상.) dev 서버 종료(Ctrl+C).
 
 - [ ] **Step 5: Commit**
 
@@ -459,13 +459,13 @@ const [unsupportedDismissed, setUnsupportedDismissed] = useState(false);
       ) : null}
 ```
 
-배치 순서 컨텍스트 (App.jsx 컴포넌트 끝부분):
+배치 순서 컨텍스트 (App.jsx 컴포넌트 끝부분 — 아래 `…` 는 위 단계에서 정의된 코드를 가리키는 비복사 표시이며 그대로 붙여넣지 말 것):
 ```jsx
-      {helpOpen ? ( ... ) : null}
+      {helpOpen ? ( … 단축키 모달 코드 그대로 … ) : null}
 
-      {releasesOpen ? ( ... 위 모달 ... ) : null}
+      {releasesOpen ? ( … Step 4 의 릴리즈 모달 코드 … ) : null}
 
-      <footer className="app-footer"> ... </footer>
+      <footer className="app-footer"> … Task 2 의 footer JSX … </footer>
     </div>
 ```
 
@@ -560,8 +560,10 @@ Expected: PASS.
 
 - [ ] **Step 2: 잔여 `Wedding Pick` 잔재 재검색**
 
-Run: `grep -rn "Wedding Pick" src/ index.html docs/ README.md`
-Expected: 디자인 스펙(`docs/.../2026-05-05-feature-batch-design.md`) 안의 "Wedding Pick 텍스트가 코드/UI/title 어디에도 남지 않는다" 문구를 제외하고는 다른 출현이 없어야 함. README/code/index.html 출현 시 해당 위치 수정.
+Run: `grep -rn "Wedding Pick" src/ index.html`
+Expected: 출력 없음 (빈 결과). 출현 시 해당 위치를 `ohmyweddingday` 로 수정.
+
+(검색 범위는 코드/UI/title 만으로 한정한다. `docs/superpowers/specs/`, `docs/superpowers/plans/`, `README.md` 는 본 변경의 대상이 아니므로 의도적으로 제외한다 — 해당 문서는 "Wedding Pick" 을 historical reference 로 포함할 수 있다.)
 
 - [ ] **Step 3: 수동 종합 확인 (배포 전 마지막 점검)**
 
@@ -592,7 +594,7 @@ push 후 Vercel 자동 재빌드 → `https://ohmyweddingday.com` 에 변경 반
 
 ## Self-Review Notes
 
-스펙(`2026-05-05-feature-batch-design.md`) 의 4개 변경 + 수용 기준 6개 모두 본 plan 의 task 1~5 에 매핑됨:
+스펙(`2026-05-05-feature-batch-design.md`) 의 4개 변경 + 수용 기준 7개 모두 본 plan 의 task 1~5 에 매핑됨:
 
 - 변경 1 (브랜드) → Task 1
 - 변경 2 (footer) → Task 2
