@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { classifyFiles } from "./lib/fileUtils";
 import { gridOptions, usePickerStore } from "./store/usePickerStore";
+import { releases } from "./data/releases";
 
 const TARGET_PRESETS = [10, 20, 30, 50];
 
@@ -13,6 +14,7 @@ function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [editingTarget, setEditingTarget] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
+  const [releasesOpen, setReleasesOpen] = useState(false);
   const [unsupportedDismissed, setUnsupportedDismissed] = useState(false);
 
   const {
@@ -168,6 +170,8 @@ function App() {
         case "Escape":
           if (helpOpen) {
             setHelpOpen(false);
+          } else if (releasesOpen) {
+            setReleasesOpen(false);
           } else {
             closeLoupe();
           }
@@ -187,6 +191,7 @@ function App() {
     moveFocus,
     nextPage,
     previousPage,
+    releasesOpen,
     toggleByVisibleIndex,
     toggleLoupe,
     undo,
@@ -355,6 +360,15 @@ function App() {
                   }}
                 >
                   단축키 도움말
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setReleasesOpen(true);
+                    setMenuOpen(false);
+                  }}
+                >
+                  릴리즈 노트
                 </button>
                 <button
                   type="button"
@@ -576,6 +590,44 @@ function App() {
                     ))}
                   </span>
                   <span>{item.desc}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      ) : null}
+
+      {releasesOpen ? (
+        <div
+          className="loupe-backdrop"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setReleasesOpen(false)}
+        >
+          <div className="release-panel" onClick={(event) => event.stopPropagation()}>
+            <div className="loupe-header">
+              <strong>릴리즈 노트</strong>
+              <button
+                className="icon-btn"
+                type="button"
+                onClick={() => setReleasesOpen(false)}
+                aria-label="닫기"
+              >
+                ✕
+              </button>
+            </div>
+            <ul className="release-list">
+              {releases.map((release) => (
+                <li key={release.version}>
+                  <div className="release-meta">
+                    <span className="release-version">v{release.version}</span>
+                    <span className="release-date">— {release.date}</span>
+                  </div>
+                  <ul className="release-changes">
+                    {release.changes.map((change, idx) => (
+                      <li key={idx}>{change}</li>
+                    ))}
+                  </ul>
                 </li>
               ))}
             </ul>
