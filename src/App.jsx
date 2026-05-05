@@ -54,6 +54,9 @@ function App() {
   const selectedCount = images.filter((image) => image.selected).length;
   const completion = targetCount > 0 ? Math.min((selectedCount / targetCount) * 100, 100) : 0;
   const atCap = targetCount > 0 && selectedCount >= targetCount;
+  const visibleSelectedCount = visibleImages.filter((image) => image.selected).length;
+  const visibleAllSelected =
+    visibleImages.length > 0 && visibleSelectedCount === visibleImages.length;
   const focusedImage = visibleImages[focusedIndex] || visibleImages[0];
   const loupeImage =
     hoverIndexRef.current != null ? visibleImages[hoverIndexRef.current] : focusedImage;
@@ -288,7 +291,7 @@ function App() {
             className="icon-btn"
             type="button"
             onClick={selectAll}
-            disabled={!hasImages || atCap}
+            disabled={!hasImages || atCap || visibleAllSelected}
             title="현재 페이지의 모든 사진 선택"
           >
             모두 선택
@@ -297,7 +300,7 @@ function App() {
             className="icon-btn"
             type="button"
             onClick={clearSelections}
-            disabled={selectedCount === 0}
+            disabled={visibleSelectedCount === 0}
             title="현재 페이지의 선택 해제"
           >
             해제
