@@ -1,10 +1,17 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { classifyFiles } from "./lib/fileUtils";
 import { gridOptions, usePickerStore } from "./store/usePickerStore";
 
 function App() {
+  const fileInputRef = useRef(null);
   const folderInputRef = useRef(null);
   const hoverIndexRef = useRef(null);
+  const menuRef = useRef(null);
+
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [editingTarget, setEditingTarget] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
+  const [unsupportedDismissed, setUnsupportedDismissed] = useState(false);
 
   const {
     images,
@@ -45,17 +52,18 @@ function App() {
   const focusedImage = visibleImages[focusedIndex] || visibleImages[0];
   const loupeImage =
     hoverIndexRef.current != null ? visibleImages[hoverIndexRef.current] : focusedImage;
+  const hasImages = images.length > 0;
 
   const keyboardShortcuts = useMemo(
     () => [
-      "`[` / `]` 그리드 조절",
-      "`1-9` 빠른 선택",
-      "`방향키` 포커스 이동",
-      "`Enter` / `S` 선택 토글",
-      "`Space` 다음 페이지",
-      "`Shift + Space` 이전 페이지",
-      "`Z` 확대 보기",
-      "`Ctrl + Z` 실행 취소",
+      { keys: ["[", "]"], desc: "그리드 조절" },
+      { keys: ["1-9"], desc: "빠른 선택" },
+      { keys: ["방향키"], desc: "포커스 이동" },
+      { keys: ["Enter", "S"], desc: "선택 토글" },
+      { keys: ["Space"], desc: "다음 페이지" },
+      { keys: ["Shift+Space"], desc: "이전 페이지" },
+      { keys: ["Z"], desc: "확대 보기" },
+      { keys: ["Ctrl+Z"], desc: "실행 취소" },
     ],
     [],
   );
@@ -64,12 +72,28 @@ function App() {
     if (!folderInputRef.current) {
       return;
     }
-
     folderInputRef.current.setAttribute("webkitdirectory", "");
     folderInputRef.current.setAttribute("directory", "");
   }, []);
 
   useEffect(() => () => releaseResources(), [releaseResources]);
+
+  useEffect(() => {
+    setUnsupportedDismissed(false);
+  }, [unsupportedFiles]);
+
+  useEffect(() => {
+    if (!menuOpen) {
+      return;
+    }
+    function handleDocClick(event) {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleDocClick);
+    return () => document.removeEventListener("mousedown", handleDocClick);
+  }, [menuOpen]);
 
   useEffect(() => {
     function handleKeyDown(event) {
@@ -140,7 +164,11 @@ function App() {
           toggleLoupe();
           break;
         case "Escape":
-          closeLoupe();
+          if (helpOpen) {
+            setHelpOpen(false);
+          } else {
+            closeLoupe();
+          }
           break;
         default:
           break;
@@ -149,7 +177,18 @@ function App() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [closeLoupe, focusedIndex, gridSize, moveFocus, nextPage, previousPage, toggleByVisibleIndex, toggleLoupe, undo]);
+  }, [
+    closeLoupe,
+    focusedIndex,
+    gridSize,
+    helpOpen,
+    moveFocus,
+    nextPage,
+    previousPage,
+    toggleByVisibleIndex,
+    toggleLoupe,
+    undo,
+  ]);
 
   async function handleInputChange(event) {
     const { accepted, rejected } = classifyFiles(event.target.files);
@@ -157,188 +196,219 @@ function App() {
     event.target.value = "";
   }
 
+  function commitTarget(value) {
+    setTargetCount(value);
+    setEditingTarget(false);
+  }
+
   return (
-    <div className="app-shell">
-      <header className="hero">
-        <div>
-          <p className="eyebrow">Desktop Wedding Selector</p>
-          <h1>Wedding Pick</h1>
-          <p className="hero-copy">
-            수천 장의 웨딩 사진을 로컬에서 빠르게 골라내는 데스크톱 셀렉 툴입니다.
-          </p>
+    <div className="app">
+      <input
+        ref={fileInputRef}
+        className="visually-hidden"
+        type="file"
+        accept=".jpg,.jpeg,.png,.webp"
+        multiple
+        onChange={handleInputChange}
+      />
+      <input
+        ref={folderInputRef}
+        className="visually-hidden"
+        type="file"
+        accept=".jpg,.jpeg,.png,.webp"
+        multiple
+        onChange={handleInputChange}
+      />
+
+      <header className="topbar">
+        <div className="topbar-left">
+          <span className="brand">Wedding Pick</span>
         </div>
-        <div className="hero-actions">
-          <label className="button primary">
-            파일 여러 개 불러오기
-            <input
-              className="visually-hidden"
-              type="file"
-              accept=".jpg,.jpeg,.png,.webp"
-              multiple
-              onChange={handleInputChange}
-            />
-          </label>
-          <label className="button secondary">
-            폴더 불러오기
-            <input
-              ref={folderInputRef}
-              className="visually-hidden"
-              type="file"
-              accept=".jpg,.jpeg,.png,.webp"
-              multiple
-              onChange={handleInputChange}
-            />
-          </label>
-          <button className="button ghost" type="button" onClick={clearAll}>
-            초기화
+
+        <div className="topbar-center">
+          <div className="progress">
+            <div className="progress-track">
+              <div className="progress-fill" style={{ width: `${completion}%` }} />
+            </div>
+            <span className="progress-text">
+              <span className="num">{selectedCount}</span>
+              <span className="sep">/</span>
+              {editingTarget ? (
+                <input
+                  className="target-input"
+                  type="number"
+                  min="0"
+                  defaultValue={targetCount}
+                  autoFocus
+                  onBlur={(event) => commitTarget(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.target.blur();
+                    } else if (event.key === "Escape") {
+                      setEditingTarget(false);
+                    }
+                  }}
+                />
+              ) : (
+                <button
+                  type="button"
+                  className="target-button"
+                  onClick={() => setEditingTarget(true)}
+                  title="목표 수량 변경"
+                >
+                  {targetCount}
+                </button>
+              )}
+            </span>
+          </div>
+        </div>
+
+        <div className="topbar-right">
+          <div className="grid-toggle" role="group" aria-label="그리드 크기">
+            {gridOptions.map((option) => (
+              <button
+                key={option}
+                type="button"
+                className={option === gridSize ? "grid-pill active" : "grid-pill"}
+                onClick={() => setGridSize(option)}
+              >
+                {option}
+              </button>
+            ))}
+          </div>
+          <button
+            className="icon-btn"
+            type="button"
+            onClick={selectAll}
+            disabled={!hasImages}
+            title="모두 선택"
+          >
+            모두 선택
           </button>
+          <button
+            className="icon-btn"
+            type="button"
+            onClick={clearSelections}
+            disabled={selectedCount === 0}
+            title="선택 모두 해제"
+          >
+            해제
+          </button>
+          <span className="topbar-divider" aria-hidden="true" />
+          <button
+            className="icon-btn"
+            type="button"
+            onClick={exportZip}
+            disabled={selectedCount === 0 || zipStatus === "running"}
+            title="선택 파일 ZIP 다운로드"
+          >
+            ZIP ↓
+          </button>
+          <div className="menu-wrap" ref={menuRef}>
+            <button
+              className="icon-btn"
+              type="button"
+              onClick={() => setMenuOpen((value) => !value)}
+              aria-label="더보기"
+              aria-expanded={menuOpen}
+            >
+              ⋯
+            </button>
+            {menuOpen ? (
+              <div className="menu" role="menu">
+                <button
+                  type="button"
+                  onClick={() => {
+                    fileInputRef.current?.click();
+                    setMenuOpen(false);
+                  }}
+                >
+                  파일 다시 불러오기
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    folderInputRef.current?.click();
+                    setMenuOpen(false);
+                  }}
+                >
+                  폴더 다시 불러오기
+                </button>
+                <hr />
+                <button
+                  type="button"
+                  onClick={() => {
+                    undo();
+                    setMenuOpen(false);
+                  }}
+                >
+                  실행 취소
+                </button>
+                <hr />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setHelpOpen(true);
+                    setMenuOpen(false);
+                  }}
+                >
+                  단축키 도움말
+                </button>
+                <button
+                  type="button"
+                  className="danger"
+                  onClick={() => {
+                    clearAll();
+                    setMenuOpen(false);
+                  }}
+                >
+                  모두 초기화
+                </button>
+              </div>
+            ) : null}
+          </div>
         </div>
       </header>
 
-      <main className="workspace">
-        <aside className="sidebar">
-          <section className="panel">
-            <h2>작업 상태</h2>
-            <div className="stat-row">
-              <span>전체 파일</span>
-              <strong>{images.length}</strong>
-            </div>
-            <div className="stat-row">
-              <span>선택 완료</span>
-              <strong>{selectedCount}</strong>
-            </div>
-            <div className="stat-row">
-              <span>현재 페이지</span>
-              <strong>
-                {images.length === 0 ? 0 : currentPage + 1} / {totalPages}
-              </strong>
-            </div>
-            <label className="field">
-              <span>목표 수량</span>
-              <input
-                type="number"
-                min="0"
-                value={targetCount}
-                onChange={(event) => setTargetCount(event.target.value)}
-              />
-            </label>
-            <div className="progress-block">
-              <div className="progress-meta">
-                <span>진행률</span>
-                <span>
-                  {selectedCount} / {targetCount}
-                </span>
+      <main className="stage">
+        {loading ? (
+          <div className="empty">
+            <div className="loading-block">
+              <span className="loading-text">이미지 로드 중 · {loadProgress}%</span>
+              <div className="progress-track wide">
+                <div className="progress-fill" style={{ width: `${loadProgress}%` }} />
               </div>
-              <div className="progress-track">
-                <div className="progress-fill" style={{ width: `${completion}%` }} />
-              </div>
-              {selectedCount > targetCount && targetCount > 0 ? (
-                <p className="warning">목표 수량을 초과했습니다. 더 추려도 괜찮아요.</p>
-              ) : null}
             </div>
-          </section>
+          </div>
+        ) : null}
 
-          <section className="panel">
-            <h2>빠른 작업</h2>
-            <div className="button-stack">
-              <button className="button secondary" type="button" onClick={selectAll}>
-                모두 선택
+        {!loading && !hasImages ? (
+          <div className="empty">
+            <h2>사진을 불러와서 시작하세요</h2>
+            <p className="muted">JPG, PNG, WebP 형식을 지원합니다.</p>
+            <div className="empty-actions">
+              <button
+                type="button"
+                className="btn primary"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                파일 선택
               </button>
-              <button className="button secondary" type="button" onClick={clearSelections}>
-                모두 해제
-              </button>
-              <button className="button secondary" type="button" onClick={undo}>
-                마지막 작업 취소
-              </button>
-              <button className="button primary" type="button" onClick={exportZip}>
-                선택 파일 ZIP 다운로드
-              </button>
-            </div>
-            {zipStatus === "running" ? (
-              <div className="mini-progress">
-                <div className="progress-track">
-                  <div className="progress-fill" style={{ width: `${zipProgress}%` }} />
-                </div>
-                <span>{zipProgress}% 압축 중</span>
-              </div>
-            ) : null}
-          </section>
-
-          <section className="panel">
-            <h2>그리드</h2>
-            <div className="grid-toggle">
-              {gridOptions.map((option) => (
-                <button
-                  key={option}
-                  type="button"
-                  className={option === gridSize ? "grid-pill active" : "grid-pill"}
-                  onClick={() => setGridSize(option)}
-                >
-                  {option}
-                </button>
-              ))}
-            </div>
-          </section>
-
-          <section className="panel">
-            <h2>단축키</h2>
-            <ul className="shortcut-list">
-              {keyboardShortcuts.map((shortcut) => (
-                <li key={shortcut}>{shortcut}</li>
-              ))}
-            </ul>
-          </section>
-
-          {unsupportedFiles.length > 0 ? (
-            <section className="panel">
-              <h2>제외된 파일</h2>
-              <p className="muted">{unsupportedFiles.length}개 파일이 지원 포맷이 아니어서 제외되었습니다.</p>
-              <div className="unsupported-list">
-                {unsupportedFiles.slice(0, 8).map((fileName) => (
-                  <span key={fileName}>{fileName}</span>
-                ))}
-                {unsupportedFiles.length > 8 ? <span>외 {unsupportedFiles.length - 8}개</span> : null}
-              </div>
-            </section>
-          ) : null}
-        </aside>
-
-        <section className="stage">
-          <div className="stage-bar">
-            <div>
-              <h2>셀렉 화면</h2>
-              <p className="muted">현재 페이지에서 숫자키와 방향키로 빠르게 셀렉하세요.</p>
-            </div>
-            <div className="pager">
-              <button className="button ghost" type="button" onClick={previousPage}>
-                이전
-              </button>
-              <button className="button ghost" type="button" onClick={nextPage}>
-                다음
+              <button
+                type="button"
+                className="btn"
+                onClick={() => folderInputRef.current?.click()}
+              >
+                폴더 선택
               </button>
             </div>
           </div>
+        ) : null}
 
-          {loading ? (
-            <div className="empty-state">
-              <strong>이미지 로드 중</strong>
-              <div className="progress-track large">
-                <div className="progress-fill" style={{ width: `${loadProgress}%` }} />
-              </div>
-              <span>{loadProgress}% 완료</span>
-            </div>
-          ) : null}
-
-          {!loading && images.length === 0 ? (
-            <div className="empty-state">
-              <strong>사진을 불러오면 셀렉 보드가 시작됩니다.</strong>
-              <span>JPG/JPEG를 우선 지원하고 PNG, WebP도 함께 받을 수 있어요.</span>
-            </div>
-          ) : null}
-
-          {!loading && images.length > 0 ? (
+        {!loading && hasImages ? (
+          <>
             <div
-              className={`grid stage-grid grid-${gridSize}`}
+              className={`grid grid-${gridSize}`}
               role="grid"
               aria-label="사진 선택 그리드"
             >
@@ -360,31 +430,127 @@ function App() {
                     hoverIndexRef.current = null;
                   }}
                 >
-                  <span className="tile-number">{index + 1}</span>
                   <img src={image.previewUrl} alt={image.name} loading="lazy" />
-                  <span className="tile-name">{image.name}</span>
-                  {image.selected ? <span className="tile-badge">선택됨</span> : null}
+                  <span className="tile-num">{index + 1}</span>
+                  {image.selected ? (
+                    <span className="tile-check" aria-hidden="true">
+                      ✓
+                    </span>
+                  ) : null}
                 </button>
               ))}
             </div>
-          ) : null}
-        </section>
+
+            {totalPages > 1 ? (
+              <>
+                <button
+                  className="edge-arrow left"
+                  type="button"
+                  onClick={previousPage}
+                  aria-label="이전 페이지"
+                >
+                  ‹
+                </button>
+                <button
+                  className="edge-arrow right"
+                  type="button"
+                  onClick={nextPage}
+                  aria-label="다음 페이지"
+                >
+                  ›
+                </button>
+              </>
+            ) : null}
+
+            <div className="page-indicator">
+              {currentPage + 1} / {totalPages}
+            </div>
+          </>
+        ) : null}
       </main>
+
+      {zipStatus === "running" ? (
+        <div className="status-toast">
+          <div className="progress-track">
+            <div className="progress-fill" style={{ width: `${zipProgress}%` }} />
+          </div>
+          <span>{zipProgress}% 압축 중</span>
+        </div>
+      ) : null}
 
       {error ? <div className="toast error">{error}</div> : null}
 
+      {unsupportedFiles.length > 0 && hasImages && !unsupportedDismissed ? (
+        <div className="toast info">
+          <span>{unsupportedFiles.length}개 파일이 지원 포맷이 아니라 제외됨</span>
+          <button
+            type="button"
+            className="toast-close"
+            onClick={() => setUnsupportedDismissed(true)}
+            aria-label="닫기"
+          >
+            ✕
+          </button>
+        </div>
+      ) : null}
+
       {loupeOpen && loupeImage ? (
-        <div className="loupe-backdrop" role="dialog" aria-modal="true" onClick={closeLoupe}>
+        <div
+          className="loupe-backdrop"
+          role="dialog"
+          aria-modal="true"
+          onClick={closeLoupe}
+        >
           <div className="loupe-panel" onClick={(event) => event.stopPropagation()}>
             <div className="loupe-header">
               <strong>{loupeImage.name}</strong>
-              <button className="button ghost" type="button" onClick={closeLoupe}>
-                닫기
+              <button
+                className="icon-btn"
+                type="button"
+                onClick={closeLoupe}
+                aria-label="닫기"
+              >
+                ✕
               </button>
             </div>
             <div className="loupe-canvas">
               <img src={loupeImage.previewUrl} alt={loupeImage.name} />
             </div>
+          </div>
+        </div>
+      ) : null}
+
+      {helpOpen ? (
+        <div
+          className="loupe-backdrop"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setHelpOpen(false)}
+        >
+          <div className="help-panel" onClick={(event) => event.stopPropagation()}>
+            <div className="loupe-header">
+              <strong>단축키</strong>
+              <button
+                className="icon-btn"
+                type="button"
+                onClick={() => setHelpOpen(false)}
+                aria-label="닫기"
+              >
+                ✕
+              </button>
+            </div>
+            <ul className="shortcut-list">
+              {keyboardShortcuts.map((item) => (
+                <li key={item.desc}>
+                  <span className="kbds">
+                    {item.keys.map((key) => (
+                      <kbd key={key}>{key}</kbd>
+                    ))}
+                  </span>
+                  <span>{item.desc}</span>
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
       ) : null}
