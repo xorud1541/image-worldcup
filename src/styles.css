@@ -822,3 +822,32 @@ kbd {
   gap: 8px;
   margin-top: 4px;
 }
+
+.pre-tournament {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 32px 16px;
+  height: 100%;
+}
+
+.pre-tournament h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 500;
+  color: #1a1a1a;
+}
+
+.pre-tournament .muted {
+  margin: 0;
+  font-size: 13px;
+  color: #6a6a6a;
+}
+
+.pre-tournament-start {
+  margin-top: 12px;
+  font-size: 14px;
+  padding: 10px 24px;
+}

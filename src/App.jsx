@@ -3,6 +3,15 @@ import { classifyFiles } from "./lib/fileUtils";
 import { gridOptions, usePickerStore } from "./store/usePickerStore";
 import { releases } from "./data/releases";
 
+const STANDARD_PRESETS = [1, 2, 5, 10, 20, 50, 100, 200, 500];
+
+function smartPresets(poolSize) {
+  if (poolSize <= 1) return [];
+  return STANDARD_PRESETS
+    .filter((value) => value >= 1 && value < poolSize)
+    .slice(-4);
+}
+
 function App() {
   const fileInputRef = useRef(null);
   const folderInputRef = useRef(null);
@@ -45,6 +54,8 @@ function App() {
     closeLoupe,
     exportZip,
     tournamentComplete,
+    tournamentStarted,
+    startTournament,
     currentRound,
   } = usePickerStore();
 
@@ -431,87 +442,124 @@ function App() {
         ) : null}
 
         {!loading && hasImages ? (
-          <>
-            {tournamentComplete ? (
-              <div className="complete-banner" role="status">
-                <span className="complete-title">🏆 토너먼트 완료</span>
-                <span className="complete-meta">
-                  Round {currentRound - 1} 끝 — 최종 {images.length}장 선택됨
-                </span>
-                <div className="complete-actions">
+          !tournamentStarted ? (
+            <div className="pre-tournament">
+              <h2>{images.length}장 업로드 완료</h2>
+              <p className="muted">몇 장으로 좁힐까요?</p>
+
+              <div className="target-presets" role="group" aria-label="목표 수량">
+                {smartPresets(images.length).map((preset) => (
                   <button
-                    className="btn primary"
+                    key={preset}
                     type="button"
-                    onClick={exportZip}
-                    disabled={zipStatus === "running"}
+                    className={preset === targetCount ? "preset-pill active" : "preset-pill"}
+                    onClick={() => setTargetCount(preset)}
                   >
-                    ZIP으로 내보내기
+                    {preset}
                   </button>
-                  <button className="btn" type="button" onClick={clearAll}>
-                    다시 시작
-                  </button>
-                </div>
+                ))}
+                <input
+                  className="preset-input"
+                  type="number"
+                  min="1"
+                  max={images.length - 1}
+                  placeholder="직접 입력"
+                  value={smartPresets(images.length).includes(targetCount) ? "" : (targetCount || "")}
+                  onChange={(event) => {
+                    const value = Number(event.target.value);
+                    setTargetCount(Number.isNaN(value) ? 0 : Math.max(value, 0));
+                  }}
+                />
               </div>
-            ) : null}
-            <div
-              className={`grid grid-${gridSize}`}
-              role="grid"
-              aria-label="사진 선택 그리드"
-            >
-              {visibleImages.map((image, index) => (
-                <button
-                  key={image.id}
-                  type="button"
-                  className={[
-                    "tile",
-                    image.selected ? "selected" : "",
-                    index === focusedIndex ? "focused" : "",
-                  ].join(" ")}
-                  onClick={() => toggleByVisibleIndex(index)}
-                  onFocus={() => setFocusedIndex(index)}
-                  onMouseEnter={() => {
-                    hoverIndexRef.current = index;
-                  }}
-                  onMouseLeave={() => {
-                    hoverIndexRef.current = null;
-                  }}
-                >
-                  <img src={image.previewUrl} alt={image.name} loading="lazy" />
-                  <span className="tile-num">{index + 1}</span>
-                  {image.selected ? (
-                    <span className="tile-check" aria-hidden="true">
-                      ✓
-                    </span>
-                  ) : null}
-                </button>
-              ))}
-            </div>
 
-            {totalPages > 1 ? (
-              <>
-                <button
-                  className="edge-arrow left"
-                  type="button"
-                  onClick={previousPage}
-                  aria-label="이전 페이지"
-                >
-                  ‹
-                </button>
-                <button
-                  className="edge-arrow right"
-                  type="button"
-                  onClick={nextPage}
-                  aria-label="다음 페이지"
-                >
-                  ›
-                </button>
-              </>
-            ) : null}
-
-            <div className="page-indicator">
-              {currentPage + 1} / {totalPages}
+              <button
+                className="btn primary pre-tournament-start"
+                type="button"
+                onClick={startTournament}
+                disabled={targetCount <= 0 || targetCount >= images.length}
+              >
+                이미지 고르기 시작
+              </button>
             </div>
-          </>
+          ) : (
+            <>
+              {tournamentComplete ? (
+                <div className="complete-banner" role="status">
+                  <span className="complete-title">🏆 토너먼트 완료</span>
+                  <span className="complete-meta">
+                    Round {currentRound - 1} 끝 — 최종 {images.length}장 선택됨
+                  </span>
+                  <div className="complete-actions">
+                    <button
+                      className="btn primary"
+                      type="button"
+                      onClick={exportZip}
+                      disabled={zipStatus === "running"}
+                    >
+                      ZIP으로 내보내기
+                    </button>
+                    <button className="btn" type="button" onClick={clearAll}>
+                      다시 시작
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+              <div
+                className={`grid grid-${gridSize}`}
+                role="grid"
+                aria-label="사진 선택 그리드"
+              >
+                {visibleImages.map((image, index) => (
+                  <button
+                    key={image.id}
+                    type="button"
+                    className={[
+                      "tile",
+                      image.selected ? "selected" : "",
+                      index === focusedIndex ? "focused" : "",
+                    ].join(" ")}
+                    onClick={() => toggleByVisibleIndex(index)}
+                    onFocus={() => setFocusedIndex(index)}
+                    onMouseEnter={() => {
+                      hoverIndexRef.current = index;
+                    }}
+                    onMouseLeave={() => {
+                      hoverIndexRef.current = null;
+                    }}
+                  >
+                    <img src={image.previewUrl} alt={image.name} loading="lazy" />
+                    <span className="tile-num">{index + 1}</span>
+                    {image.selected ? (
+                      <span className="tile-check" aria-hidden="true">
+                        ✓
+                      </span>
+                    ) : null}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                className="edge-arrow left"
+                type="button"
+                onClick={previousPage}
+                aria-label="이전 페이지"
+              >
+                ‹
+              </button>
+              <button
+                className="edge-arrow right"
+                type="button"
+                onClick={nextPage}
+                aria-label="다음 페이지"
+              >
+                ›
+              </button>
+
+              <div className="page-indicator">
+                {currentPage + 1} / {totalPages}
+              </div>
+            </>
+          )
         ) : null}
       </main>
 
