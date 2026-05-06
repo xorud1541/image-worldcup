@@ -112,7 +112,12 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>
     if (targetCount <= 0 || targetCount >= images.length) {
       return;
     }
-    set({ tournamentStarted: true });
+    get().pushHistory();
+    set({
+      tournamentStarted: true,
+      currentPage: 0,
+      focusedIndex: 0,
+    });
   },
 ```
 
@@ -121,26 +126,8 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>
 - 풀 비어있음 → no-op
 - 목표 0 또는 풀 크기 이상 → no-op (UI 가 disabled 시켜도 store-level 방어)
 
-`pushHistory` 안 호출 — 이 단계 전환은 사소하며 undo 가 동작하긴 해야 한다 (snapshot 에 `tournamentStarted` 포함됨). pushHistory 호출하면 시작 직후 Undo 한 번에 셋업 단계로 복귀. **포함하는 게 맞음.** 위 코드에 추가:
-
-수정된 액션:
-
-```js
-  startTournament: () => {
-    const { images, targetCount, tournamentStarted } = get();
-    if (tournamentStarted) {
-      return;
-    }
-    if (images.length === 0) {
-      return;
-    }
-    if (targetCount <= 0 || targetCount >= images.length) {
-      return;
-    }
-    get().pushHistory();
-    set({ tournamentStarted: true });
-  },
-```
+`pushHistory()` 를 호출 — Undo 한 번에 사전 셋업 단계로 복귀 가능. snapshot 에 `tournamentStarted` 포함됨.
+시작 시 `currentPage: 0, focusedIndex: 0` 도 설정 — 사전 단계에서 어떤 이유로 변경됐을 경우 첫 페이지부터 깨끗하게 시작.
 
 - [ ] **Step 2: Build 검증**
 
@@ -156,7 +143,7 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>
 
 ---
 
-## Task 3: store — `nextPage` 에 자동 advance 로직
+## Task 3: store — `nextPage` 에 자동 advance 로직 + tournament-active gate
 
 **Files:**
 - Modify: `src/store/usePickerStore.js`
@@ -175,6 +162,10 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>
 
 ```js
   nextPage: () => {
+    if (!get().tournamentStarted) {
+      return;
+    }
+
     const { currentPage, images, gridSize } = get();
     const totalPages = Math.max(1, Math.ceil(images.length / gridSize));
     const lastPage = totalPages - 1;
@@ -188,7 +179,55 @@ Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>
   },
 ```
 
-`advanceRound` 의 4가지 no-op 가드 (`tournamentComplete`, 빈 풀, 0 선택, 전체 선택) 가 그대로 작동. 사용자가 마지막 페이지에서 트리거해도 라운드가 진행될 조건 안 맞으면 no-op.
+`advanceRound` 의 4가지 no-op 가드 (`tournamentComplete`, 빈 풀, 0 선택, 전체 선택) 가 그대로 작동. `tournamentStarted` 가드는 사전 셋업 단계에서 키보드 Space 등이 hidden 그리드 state 를 건드리지 못하게 하는 backstop.
+
+- [ ] **Step 2: `previousPage` 도 동일 가드 추가**
+
+기존:
+
+```js
+  previousPage: () => {
+    get().setPage(get().currentPage - 1);
+  },
+```
+
+변경:
+
+```js
+  previousPage: () => {
+    if (!get().tournamentStarted) {
+      return;
+    }
+    get().setPage(get().currentPage - 1);
+  },
+```
+
+- [ ] **Step 3: `toggleByVisibleIndex`, `selectAll`, `clearSelections`, `advanceRound`, `toggleLoupe` 에 `tournamentStarted` 가드 추가**
+
+각 함수 진입부의 **기존 가드들 위** 에 한 줄 추가:
+
+```js
+    if (!get().tournamentStarted) {
+      return;
+    }
+```
+
+5개 함수 모두. 기존 `tournamentComplete` 가드는 그대로 유지.
+
+(예: `toggleByVisibleIndex` 변경 후)
+```js
+  toggleByVisibleIndex: (visibleIndex) => {
+    if (!get().tournamentStarted) {
+      return;
+    }
+    if (get().tournamentComplete) {
+      return;
+    }
+    // ... 기존 본체
+  },
+```
+
+`toggleLoupe` 는 store 안에서 위치 찾아서 같은 패턴으로 가드 추가.
 
 - [ ] **Step 2: Build 검증**
 
@@ -363,29 +402,80 @@ function smartPresets(poolSize) {
 )}
 ```
 
-**핵심 컨텍스트**: `{!tournamentStarted}` 분기를 추가하면서, **기존의 그리드 + 완료 배너 + 페이지 네비 등 모든 "tournament 활성 시" UI 를 `else` 가지로 묶어야 함.** 작업자는 현재 `{!loading && hasImages ? (<>...기존 그리드 컨테이너...</>) : null}` 의 fragment 내용을 보고 적절히 분기.
+**핵심 컨텍스트** (**작업자 주의** — 아래 JSX 는 _구조 가이드_ 일 뿐 그대로 붙여넣기 위한 것 아님. 실제 작업은 현재 코드의 기존 블록들을 보존하면서 ternary 로 감싸는 형태):
 
-대안 — 분기를 더 평평하게: 기존 Fragment 안 첫 자식으로 `{!tournamentStarted ? <PreTournamentSetup/> : null}` 을 두고, 같은 Fragment 의 나머지(그리드 등) 는 `{tournamentStarted ? <GridArea/> : null}` 로 감싸기. 가독성 측면에서 평평한 분기가 낫지만 중복 분기 — 작업자 판단.
+현재 코드는 대략:
+```jsx
+{!loading && hasImages ? (
+  <>
+    {tournamentComplete ? (
+      <div className="complete-banner">...실제 배너 JSX...</div>
+    ) : null}
+    <div className={`grid grid-${gridSize}`} role="grid" ...>
+      {visibleImages.map((image, index) => ( ... ))}
+    </div>
+    {/* 페이지 네비, 그리드 푸터 등 */}
+  </>
+) : null}
+```
 
-권장: 사전 셋업과 그리드를 ternary 로 분기 (한 번에 하나만 렌더):
-
+목표 구조:
 ```jsx
 {!loading && hasImages ? (
   !tournamentStarted ? (
-    <div className="pre-tournament"> ... </div>
+    <div className="pre-tournament"> ...사전 셋업 JSX (위 Step 3 의 본문)... </div>
   ) : (
     <>
-      {tournamentComplete ? <CompleteBanner /> : null}
-      <div className="grid ..."> ... </div>
-      ...기타 그리드 영역 UI...
+      {tournamentComplete ? (
+        <div className="complete-banner">...기존 배너 JSX 보존...</div>
+      ) : null}
+      <div className={`grid grid-${gridSize}`} ...>
+        {visibleImages.map(...)}
+      </div>
+      {/* 기존 페이지 네비 등 보존 */}
     </>
   )
 ) : null}
 ```
 
-작업자는 위 권장 패턴으로 실제 JSX 를 재배치. 기존 코드 손실 없도록 careful.
+작업자는: 기존 fragment 내용을 통째로 잘라서 새 ternary 의 `else` 가지로 붙여넣음. 그 위에 `<div className="pre-tournament">...</div>` 를 새로 만들어 `then` 가지에 둠. 어떤 기존 자식도 누락되면 안 됨 (그리드, 페이지 네비, 배너 모두).
 
-- [ ] **Step 4: CSS 추가**
+- [ ] **Step 4: 페이지 네비 가시성 개선 — `totalPages > 1` 가드 제거**
+
+현재 `src/App.jsx:532` 의 `{totalPages > 1 ? (<><edge-arrow prev/><edge-arrow next/></>) : null}` 형태에서 conditional 을 제거. **edge-arrow 두 개를 항상 렌더**.
+
+이유: 풀이 한 페이지에 다 들어갈 정도로 좁혀졌을 때 (예: gridSize=16, 풀=10) 사용자가 클릭으로 라운드를 진행할 길이 없음. arrow 가 항상 보이면 next 클릭이 advanceRound 트리거 (`nextPage` 의 last-page 분기로). prev arrow 는 단일 페이지에서 무해 (setPage(-1) → clamp 0 → no-op).
+
+`page-indicator` (`{currentPage + 1} / {totalPages}`) 도 그대로 — 단일 페이지면 "1 / 1" 표시.
+
+변경 후 형태:
+
+```jsx
+            <button
+              className="edge-arrow left"
+              type="button"
+              onClick={previousPage}
+              aria-label="이전 페이지"
+            >
+              ‹
+            </button>
+            <button
+              className="edge-arrow right"
+              type="button"
+              onClick={nextPage}
+              aria-label="다음 페이지"
+            >
+              ›
+            </button>
+
+            <div className="page-indicator">
+              {currentPage + 1} / {totalPages}
+            </div>
+```
+
+(이 페이지 네비는 Task 5 Step 3 의 ternary `tournamentStarted ? <Grid> : <PreSetup>` 의 `<Grid>` 가지에 들어있으므로 사전 셋업 단계에선 자동으로 안 보임.)
+
+- [ ] **Step 5: CSS 추가**
 
 `src/styles.css` 끝에 `.pre-tournament` 와 `.pre-tournament-start` 스타일 추가:
 
@@ -420,7 +510,7 @@ function smartPresets(poolSize) {
 }
 ```
 
-- [ ] **Step 5: Build + 수동 확인**
+- [ ] **Step 6: Build + 수동 확인**
 
 Run: `npm run build`. PASS.
 
@@ -429,8 +519,9 @@ Run: `npm run build`. PASS.
 - 30장 업로드 → "30장 업로드 완료, 몇 장으로 좁힐까요?" + 프리셋 [2,5,10,20] + 직접 입력 + 시작 버튼.
 - 시작 버튼 disabled 가 적절히 동작 (target 0 이거나 ≥ pool).
 - 시작 버튼 클릭 → 그리드 + Round 1 배지.
+- 풀이 단일 페이지로 줄어들었을 때도 arrow 양쪽 모두 보이고 next 클릭이 advance 작동.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 7: Commit**
 
 ```
 feat: add pre-tournament setup screen with smart presets
@@ -462,19 +553,29 @@ const prevRoundRef = useRef(currentRound);
 
 (`currentRound` destructure 가 이미 있음. `useRef` import 가 없으면 React import 줄에 추가.)
 
-useEffect:
+useEffect 두 개로 분리 — 하나는 라운드 전환 토스트, 하나는 완료 시 토스트 강제 정리:
 
 ```jsx
 useEffect(() => {
   if (currentRound > prevRoundRef.current && !tournamentComplete) {
     setAnnouncedRound(currentRound);
-    prevRoundRef.current = currentRound;
     const id = setTimeout(() => setAnnouncedRound(null), 2500);
+    prevRoundRef.current = currentRound;
     return () => clearTimeout(id);
   }
   prevRoundRef.current = currentRound;
 }, [currentRound, tournamentComplete]);
+
+useEffect(() => {
+  if (tournamentComplete) {
+    setAnnouncedRound(null);
+  }
+}, [tournamentComplete]);
 ```
+
+핵심:
+- 첫 effect: 라운드 증가 + 미완료 시 토스트 표시. 2.5초 후 자동 해제.
+- 두 번째 effect: 완료 상태로 전환된 직후 토스트가 떠있으면 즉시 정리. 완료 배너가 단독 신호가 되도록.
 
 위치: 다른 useEffect 들 사이.
 
