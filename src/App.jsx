@@ -52,6 +52,7 @@ function App() {
     undo,
     toggleLoupe,
     closeLoupe,
+    openLoupeAt,
     exportZip,
     tournamentComplete,
     tournamentStarted,
@@ -512,15 +513,22 @@ function App() {
                 aria-label="사진 선택 그리드"
               >
                 {visibleImages.map((image, index) => (
-                  <button
+                  <div
                     key={image.id}
-                    type="button"
+                    role="button"
+                    tabIndex={0}
                     className={[
                       "tile",
                       image.selected ? "selected" : "",
                       index === focusedIndex ? "focused" : "",
                     ].join(" ")}
                     onClick={() => toggleByVisibleIndex(index)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        toggleByVisibleIndex(index);
+                      }
+                    }}
                     onFocus={() => setFocusedIndex(index)}
                     onMouseEnter={() => {
                       hoverIndexRef.current = index;
@@ -536,7 +544,20 @@ function App() {
                         ✓
                       </span>
                     ) : null}
-                  </button>
+                    <button
+                      className="tile-zoom"
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        hoverIndexRef.current = index;
+                        openLoupeAt(index);
+                      }}
+                      aria-label="확대 보기"
+                      title="확대 보기"
+                    >
+                      🔍
+                    </button>
+                  </div>
                 ))}
               </div>
 
