@@ -75,28 +75,49 @@ EOF
 
 topbar-right 안의 "모두 선택" 과 "해제" 버튼:
 
-기존:
+기존 (정확한 현재 코드 — App.jsx 약 287-303 줄):
 ```jsx
-<button className="icon-btn" type="button" onClick={selectAll} disabled={...} title="...">
-  모두 선택
-</button>
-<button className="icon-btn" type="button" onClick={clearSelections} disabled={...} title="...">
-  해제
-</button>
+          <button
+            className="icon-btn"
+            type="button"
+            onClick={selectAll}
+            disabled={!hasImages || visibleAllSelected || tournamentComplete}
+            title="현재 페이지의 모든 사진 선택"
+          >
+            모두 선택
+          </button>
+          <button
+            className="icon-btn"
+            type="button"
+            onClick={clearSelections}
+            disabled={visibleSelectedCount === 0 || tournamentComplete}
+            title="현재 페이지의 선택 해제"
+          >
+            해제
+          </button>
 ```
 
-다음으로 (`icon-btn` 옆에 `topbar-action` 추가):
-
+다음으로 — `className` 만 `"icon-btn topbar-action"` 으로 변경, 다른 속성은 그대로:
 ```jsx
-<button className="icon-btn topbar-action" type="button" onClick={selectAll} disabled={...} title="...">
-  모두 선택
-</button>
-<button className="icon-btn topbar-action" type="button" onClick={clearSelections} disabled={...} title="...">
-  해제
-</button>
+          <button
+            className="icon-btn topbar-action"
+            type="button"
+            onClick={selectAll}
+            disabled={!hasImages || visibleAllSelected || tournamentComplete}
+            title="현재 페이지의 모든 사진 선택"
+          >
+            모두 선택
+          </button>
+          <button
+            className="icon-btn topbar-action"
+            type="button"
+            onClick={clearSelections}
+            disabled={visibleSelectedCount === 0 || tournamentComplete}
+            title="현재 페이지의 선택 해제"
+          >
+            해제
+          </button>
 ```
-
-다른 속성 변경 없음. `disabled` / `title` / 텍스트 그대로.
 
 - [ ] **Step 2: Build 검증**
 
@@ -148,6 +169,12 @@ EOF
     font-size: 13px;
   }
 
+  /* progress 영역의 desktop min-width 320 제거 — 모바일 좁은 폭 적응 */
+  .progress {
+    min-width: 0;
+    gap: 8px;
+  }
+
   .round-info {
     font-size: 12px;
   }
@@ -157,17 +184,19 @@ EOF
     padding: 2px 8px;
   }
 
+  /* 직접 select/clear 버튼 숨김 — ⋯ 메뉴 경로로 대체 */
   .topbar-right .topbar-action {
     display: none;
   }
 
-  .grid-pill {
-    min-width: 32px;
-    padding: 6px 10px;
-    font-size: 12px;
+  /* 그리드 토글은 모바일에서 숨김 — 기본 그리드 사이즈 사용, 데스크탑에서 변경 권장 */
+  .grid-toggle {
+    display: none;
   }
 
+  /* edge-arrow 가시성 + 터치 친화적 크기 — desktop 의 hover 의존 (opacity:0) 회피 */
   .edge-arrow {
+    opacity: 1;
     width: 44px;
     height: 44px;
     font-size: 24px;
