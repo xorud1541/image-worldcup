@@ -23,6 +23,7 @@ function App() {
   const [helpOpen, setHelpOpen] = useState(false);
   const [releasesOpen, setReleasesOpen] = useState(false);
   const [unsupportedDismissed, setUnsupportedDismissed] = useState(false);
+  const [announcedRound, setAnnouncedRound] = useState(null);
 
   const {
     images,
@@ -58,6 +59,8 @@ function App() {
     startTournament,
     currentRound,
   } = usePickerStore();
+
+  const prevRoundRef = useRef(currentRound);
 
   const visibleImages = usePickerStore((state) => state.getVisibleImages());
 
@@ -210,6 +213,22 @@ function App() {
     toggleLoupe,
     undo,
   ]);
+
+  useEffect(() => {
+    if (currentRound > prevRoundRef.current && !tournamentComplete) {
+      setAnnouncedRound(currentRound);
+      const id = setTimeout(() => setAnnouncedRound(null), 2500);
+      prevRoundRef.current = currentRound;
+      return () => clearTimeout(id);
+    }
+    prevRoundRef.current = currentRound;
+  }, [currentRound, tournamentComplete]);
+
+  useEffect(() => {
+    if (tournamentComplete) {
+      setAnnouncedRound(null);
+    }
+  }, [tournamentComplete]);
 
   async function handleInputChange(event) {
     const { accepted, rejected } = classifyFiles(event.target.files);
@@ -686,6 +705,12 @@ function App() {
           </div>
         </div>
       ) : null}
+      {announcedRound != null ? (
+        <div className="round-toast" role="status" aria-live="polite">
+          Round {announcedRound} 시작
+        </div>
+      ) : null}
+
       <footer className="app-footer">
         사진은 서버에 전송되지 않습니다.
       </footer>
