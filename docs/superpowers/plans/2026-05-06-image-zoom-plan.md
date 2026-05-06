@@ -65,55 +65,83 @@ EOF
     openLoupeAt,
 ```
 
-- [ ] **Step 2: 그리드 타일에 🔍 버튼 자식 추가**
+- [ ] **Step 2: 그리드 타일을 div role=button 으로 변경 + 자식 🔍 버튼 추가**
 
-타일 button 의 `</button>` 직전에 다음 child 추가 (다른 자식들 — `<img>`, `tile-num`, `tile-check` — 와 함께):
+현재 tile 은 `<button type="button">`. button 안에 다른 button 을 nest 하는 건 HTML 표준상 invalid. **tile 을 `<div role="button" tabIndex={0}>` 으로 변경**하고 그 안에 정상 `<button className="tile-zoom">` 을 자식으로 둠.
 
+기존 (App.jsx 약 458-528 줄):
 ```jsx
-                  <button
-                    className="tile-zoom"
-                    type="button"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      openLoupeAt(index);
-                    }}
-                    aria-label="확대 보기"
-                    title="확대 보기"
-                  >
-                    🔍
-                  </button>
+<button
+  key={image.id}
+  type="button"
+  className={[
+    "tile",
+    image.selected ? "selected" : "",
+    index === focusedIndex ? "focused" : "",
+  ].join(" ")}
+  onClick={() => toggleByVisibleIndex(index)}
+  onFocus={() => setFocusedIndex(index)}
+  onMouseEnter={() => { hoverIndexRef.current = index; }}
+  onMouseLeave={() => { hoverIndexRef.current = null; }}
+>
+  <img src={image.previewUrl} alt={image.name} loading="lazy" />
+  <span className="tile-num">{index + 1}</span>
+  {image.selected ? (
+    <span className="tile-check" aria-hidden="true">✓</span>
+  ) : null}
+</button>
 ```
 
-⚠️ 부모 button 안에 자식 button 을 두면 HTML 표준상 invalid (interactive content nested). React 는 동작은 하지만 콘솔 경고 가능. 대안:
-- (a) tile button 을 `<div role="button">` 으로 변경
-- (b) tile-zoom 을 button 이 아닌 `<span role="button" tabIndex={0} onClick=... onKeyDown=...>` 로
-
-**(b) 채택** — 영향 범위 최소. 다음으로 작성:
-
+다음으로:
 ```jsx
-                  <span
-                    className="tile-zoom"
-                    role="button"
-                    tabIndex={0}
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      openLoupeAt(index);
-                    }}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter" || event.key === " ") {
-                        event.preventDefault();
-                        event.stopPropagation();
-                        openLoupeAt(index);
-                      }
-                    }}
-                    aria-label="확대 보기"
-                    title="확대 보기"
-                  >
-                    🔍
-                  </span>
+<div
+  key={image.id}
+  role="button"
+  tabIndex={0}
+  className={[
+    "tile",
+    image.selected ? "selected" : "",
+    index === focusedIndex ? "focused" : "",
+  ].join(" ")}
+  onClick={() => toggleByVisibleIndex(index)}
+  onKeyDown={(event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      toggleByVisibleIndex(index);
+    }
+  }}
+  onFocus={() => setFocusedIndex(index)}
+  onMouseEnter={() => { hoverIndexRef.current = index; }}
+  onMouseLeave={() => { hoverIndexRef.current = null; }}
+>
+  <img src={image.previewUrl} alt={image.name} loading="lazy" />
+  <span className="tile-num">{index + 1}</span>
+  {image.selected ? (
+    <span className="tile-check" aria-hidden="true">✓</span>
+  ) : null}
+  <button
+    className="tile-zoom"
+    type="button"
+    onClick={(event) => {
+      event.stopPropagation();
+      hoverIndexRef.current = index;
+      openLoupeAt(index);
+    }}
+    aria-label="확대 보기"
+    title="확대 보기"
+  >
+    🔍
+  </button>
+</div>
 ```
 
-`stopPropagation` 으로 부모 button 의 onClick (`toggleByVisibleIndex(index)`) 안 발화.
+핵심:
+- tile = `<div role="button" tabIndex={0}>` — 키보드 Tab 이동 + Enter/Space 로 클릭 가능 (onKeyDown 핸들러)
+- tile-zoom = 정상 `<button type="button">` — div 안 nest OK
+- zoom 클릭 시:
+  - `event.stopPropagation()` 으로 tile div onClick 차단 (셀렉트 안 토글)
+  - `hoverIndexRef.current = index` 미리 set — `loupeImage` 가 `hoverIndexRef.current` 우선이라 stale ref 문제 방지 (Codex 가 짚은 critical 3)
+  - `openLoupeAt(index)` 호출
 
 - [ ] **Step 3: Build 검증**
 
@@ -279,28 +307,20 @@ EOF
 **Files:**
 - Modify: `src/styles.css`
 
-- [ ] **Step 1: `.tile` 의 position 확인**
+- [ ] **Step 1: `.tile { position: relative }` 확인 (이미 styles.css 에 존재 — skip)**
 
-`.tile` 룰에 `position: relative` 가 있는지 확인. 없으면 추가:
-
-```css
-.tile {
-  /* ... 기존 속성 ... */
-  position: relative;
-}
-```
-
-(이미 있으면 skip.)
+Codex 리뷰에서 확인: `src/styles.css:271` 의 `.tile` 규칙에 `position: relative` 가 이미 존재함. 본 step 은 no-op. 다음 step 으로 진행.
 
 - [ ] **Step 2: 새 규칙 추가**
 
 `src/styles.css` 끝 (또는 .tile 관련 섹션 뒤) 에 다음 추가:
 
 ```css
+/* bottom-right 로 배치 — top-right 는 selected check (.tile-check) 가 차지 */
 .tile-zoom {
   position: absolute;
-  top: 6px;
-  right: 6px;
+  bottom: 8px;
+  right: 8px;
   width: 32px;
   height: 32px;
   border: 0;
@@ -315,6 +335,7 @@ EOF
   opacity: 0;
   transition: opacity 0.15s ease;
   user-select: none;
+  z-index: 2;
 }
 
 .tile:hover .tile-zoom,
