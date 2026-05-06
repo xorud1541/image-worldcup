@@ -19,7 +19,6 @@ function App() {
   const menuRef = useRef(null);
 
   const [menuOpen, setMenuOpen] = useState(false);
-  const [editingTarget, setEditingTarget] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [releasesOpen, setReleasesOpen] = useState(false);
   const [unsupportedDismissed, setUnsupportedDismissed] = useState(false);
@@ -66,7 +65,6 @@ function App() {
 
   const totalPages = Math.max(1, Math.ceil(images.length / gridSize));
   const selectedCount = images.filter((image) => image.selected).length;
-  const completion = targetCount > 0 ? Math.min((selectedCount / targetCount) * 100, 100) : 0;
   const visibleSelectedCount = visibleImages.filter((image) => image.selected).length;
   const visibleAllSelected =
     visibleImages.length > 0 && visibleSelectedCount === visibleImages.length;
@@ -236,11 +234,6 @@ function App() {
     event.target.value = "";
   }
 
-  function commitTarget(value) {
-    setTargetCount(value);
-    setEditingTarget(false);
-  }
-
   return (
     <div className="app">
       <input
@@ -266,46 +259,16 @@ function App() {
         </div>
 
         <div className="topbar-center">
-          <div className="progress">
-            {!tournamentComplete ? (
+          {tournamentStarted && !tournamentComplete ? (
+            <div className="progress">
               <span className="round-badge" aria-label={`라운드 ${currentRound}`}>
                 Round {currentRound}
               </span>
-            ) : null}
-            <div className="progress-track">
-              <div className="progress-fill" style={{ width: `${completion}%` }} />
+              <span className="round-info">
+                풀 {images.length}장 → 목표 {targetCount}장
+              </span>
             </div>
-            <span className="progress-text">
-              <span className="num">{selectedCount}</span>
-              <span className="sep">/</span>
-              {editingTarget ? (
-                <input
-                  className="target-input"
-                  type="number"
-                  min="0"
-                  defaultValue={targetCount}
-                  autoFocus
-                  onBlur={(event) => commitTarget(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter") {
-                      event.target.blur();
-                    } else if (event.key === "Escape") {
-                      setEditingTarget(false);
-                    }
-                  }}
-                />
-              ) : (
-                <button
-                  type="button"
-                  className="target-button"
-                  onClick={() => setEditingTarget(true)}
-                  title="목표 수량 변경"
-                >
-                  {targetCount}
-                </button>
-              )}
-            </span>
-          </div>
+          ) : null}
         </div>
 
         <div className="topbar-right">

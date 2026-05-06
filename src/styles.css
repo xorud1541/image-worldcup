@@ -110,56 +110,6 @@ input {
   margin: 0 2px;
 }
 
-.progress-text {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 13px;
-  color: #4a4a4a;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
-.progress-text .num {
-  color: #1a1a1a;
-  font-weight: 500;
-}
-
-.progress-text .sep {
-  color: rgba(0, 0, 0, 0.3);
-}
-
-.target-button {
-  border: 0;
-  background: transparent;
-  padding: 2px 6px;
-  border-radius: 4px;
-  cursor: pointer;
-  color: #4a4a4a;
-  font-variant-numeric: tabular-nums;
-  font-size: 13px;
-  transition: background 0.12s ease;
-}
-
-.target-button:hover {
-  background: rgba(0, 0, 0, 0.05);
-  color: #1a1a1a;
-}
-
-.target-input {
-  width: 56px;
-  padding: 2px 6px;
-  border: 1px solid rgba(0, 0, 0, 0.16);
-  border-radius: 4px;
-  background: #ffffff;
-  font-variant-numeric: tabular-nums;
-  font-size: 13px;
-  outline: none;
-}
-
-.target-input:focus {
-  border-color: #1a1a1a;
-}
 
 .grid-toggle {
   display: flex;
@@ -873,4 +823,9 @@ kbd {
   10% { opacity: 1; transform: translate(-50%, 0); }
   85% { opacity: 1; transform: translate(-50%, 0); }
   100% { opacity: 0; transform: translate(-50%, -10px); }
+}
+
+.round-info {
+  font-size: 13px;
+  color: #4a4a4a;
 }
