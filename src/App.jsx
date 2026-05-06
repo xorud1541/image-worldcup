@@ -284,7 +284,9 @@ function App() {
 
       <header className="topbar">
         <div className="topbar-left">
-          <span className="brand">ohmyweddingday</span>
+          <a href="/" className="brand-link" aria-label="Oh My Wedding Day">
+            <img src="/logo-horizontal.svg" alt="Oh My Wedding Day" className="brand-logo" />
+          </a>
         </div>
 
         <div className="topbar-center">
