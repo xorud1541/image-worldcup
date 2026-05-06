@@ -3,8 +3,6 @@ import { classifyFiles } from "./lib/fileUtils";
 import { gridOptions, usePickerStore } from "./store/usePickerStore";
 import { releases } from "./data/releases";
 
-const TARGET_PRESETS = [10, 20, 30, 50];
-
 function App() {
   const fileInputRef = useRef(null);
   const folderInputRef = useRef(null);
@@ -48,7 +46,6 @@ function App() {
     exportZip,
     tournamentComplete,
     currentRound,
-    advanceRound,
   } = usePickerStore();
 
   const visibleImages = usePickerStore((state) => state.getVisibleImages());
@@ -312,20 +309,6 @@ function App() {
           >
             해제
           </button>
-          <button
-            className="btn primary"
-            type="button"
-            onClick={advanceRound}
-            disabled={
-              !hasImages ||
-              tournamentComplete ||
-              selectedCount === 0 ||
-              selectedCount === images.length
-            }
-            title="선택한 사진들로 다음 라운드 진행"
-          >
-            다음 라운드
-          </button>
           <span className="topbar-divider" aria-hidden="true" />
           <button
             className="icon-btn"
@@ -427,31 +410,6 @@ function App() {
           <div className="empty">
             <h2>사진을 불러와서 시작하세요</h2>
             <p className="muted">JPG, PNG, WebP 형식을 지원합니다.</p>
-
-            <div className="target-presets" role="group" aria-label="목표 수량">
-              <span className="target-presets-label">목표 수량</span>
-              {TARGET_PRESETS.map((preset) => (
-                <button
-                  key={preset}
-                  type="button"
-                  className={preset === targetCount ? "preset-pill active" : "preset-pill"}
-                  onClick={() => setTargetCount(preset)}
-                >
-                  {preset}
-                </button>
-              ))}
-              <input
-                className="preset-input"
-                type="number"
-                min="0"
-                placeholder="직접 입력"
-                value={TARGET_PRESETS.includes(targetCount) ? "" : targetCount}
-                onChange={(event) => {
-                  const value = Number(event.target.value);
-                  setTargetCount(Number.isNaN(value) ? 0 : Math.max(value, 0));
-                }}
-              />
-            </div>
 
             <div className="empty-actions">
               <button
