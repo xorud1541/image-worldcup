@@ -23,6 +23,7 @@ function App() {
   const [releasesOpen, setReleasesOpen] = useState(false);
   const [unsupportedDismissed, setUnsupportedDismissed] = useState(false);
   const [announcedRound, setAnnouncedRound] = useState(null);
+  const [loupeZoom, setLoupeZoom] = useState(1);
 
   const {
     images,
@@ -183,6 +184,26 @@ function App() {
           event.preventDefault();
           toggleLoupe();
           break;
+        case "+":
+        case "=":
+          if (loupeOpen) {
+            event.preventDefault();
+            setLoupeZoom((z) => Math.min(3, z + 0.25));
+          }
+          break;
+        case "-":
+        case "_":
+          if (loupeOpen) {
+            event.preventDefault();
+            setLoupeZoom((z) => Math.max(0.5, z - 0.25));
+          }
+          break;
+        case "0":
+          if (loupeOpen) {
+            event.preventDefault();
+            setLoupeZoom(1);
+          }
+          break;
         case "Escape":
           if (helpOpen) {
             setHelpOpen(false);
@@ -204,6 +225,7 @@ function App() {
     focusedIndex,
     gridSize,
     helpOpen,
+    loupeOpen,
     moveFocus,
     nextPage,
     previousPage,
@@ -228,6 +250,12 @@ function App() {
       setAnnouncedRound(null);
     }
   }, [tournamentComplete]);
+
+  useEffect(() => {
+    if (loupeOpen) {
+      setLoupeZoom(1);
+    }
+  }, [loupeOpen, loupeImage]);
 
   async function handleInputChange(event) {
     const { accepted, rejected } = classifyFiles(event.target.files);
@@ -626,6 +654,36 @@ function App() {
           <div className="loupe-panel" onClick={(event) => event.stopPropagation()}>
             <div className="loupe-header">
               <strong>{loupeImage.name}</strong>
+              <div className="loupe-zoom">
+                <button
+                  className="icon-btn"
+                  type="button"
+                  onClick={() => setLoupeZoom((z) => Math.max(0.5, z - 0.25))}
+                  disabled={loupeZoom <= 0.5}
+                  aria-label="축소"
+                >
+                  −
+                </button>
+                <span className="loupe-zoom-value">{Math.round(loupeZoom * 100)}%</span>
+                <button
+                  className="icon-btn"
+                  type="button"
+                  onClick={() => setLoupeZoom((z) => Math.min(3, z + 0.25))}
+                  disabled={loupeZoom >= 3}
+                  aria-label="확대"
+                >
+                  +
+                </button>
+                <button
+                  className="icon-btn"
+                  type="button"
+                  onClick={() => setLoupeZoom(1)}
+                  disabled={loupeZoom === 1}
+                  aria-label="원본 크기"
+                >
+                  ⟲
+                </button>
+              </div>
               <button
                 className="icon-btn"
                 type="button"
@@ -636,7 +694,11 @@ function App() {
               </button>
             </div>
             <div className="loupe-canvas">
-              <img src={loupeImage.previewUrl} alt={loupeImage.name} />
+              <img
+                src={loupeImage.previewUrl}
+                alt={loupeImage.name}
+                style={{ width: `${loupeZoom * 100}%`, height: "auto", maxWidth: "none" }}
+              />
             </div>
           </div>
         </div>
