@@ -285,7 +285,7 @@ function App() {
             ))}
           </div>
           <button
-            className="icon-btn"
+            className="icon-btn topbar-action"
             type="button"
             onClick={selectAll}
             disabled={!hasImages || visibleAllSelected || tournamentComplete}
@@ -294,7 +294,7 @@ function App() {
             모두 선택
           </button>
           <button
-            className="icon-btn"
+            className="icon-btn topbar-action"
             type="button"
             onClick={clearSelections}
             disabled={visibleSelectedCount === 0 || tournamentComplete}
@@ -351,6 +351,26 @@ function App() {
                   }}
                 >
                   실행 취소
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    selectAll();
+                    setMenuOpen(false);
+                  }}
+                  disabled={!hasImages || visibleAllSelected || tournamentComplete}
+                >
+                  모두 선택
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    clearSelections();
+                    setMenuOpen(false);
+                  }}
+                  disabled={visibleSelectedCount === 0 || tournamentComplete}
+                >
+                  선택 모두 해제
                 </button>
                 <hr />
                 <button
