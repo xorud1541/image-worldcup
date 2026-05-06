@@ -12,6 +12,7 @@ function buildSnapshot(state) {
     targetCount: state.targetCount,
     currentRound: state.currentRound,
     tournamentComplete: state.tournamentComplete,
+    tournamentStarted: state.tournamentStarted,
   };
 }
 
@@ -23,6 +24,7 @@ function restoreSnapshot(snapshot) {
     targetCount: snapshot.targetCount,
     currentRound: snapshot.currentRound,
     tournamentComplete: snapshot.tournamentComplete,
+    tournamentStarted: snapshot.tournamentStarted,
   };
 }
 
@@ -41,6 +43,7 @@ export const usePickerStore = create((set, get) => ({
   error: "",
   currentRound: 1,
   tournamentComplete: false,
+  tournamentStarted: false,
   history: [],
 
   loadFiles: async (files, unsupportedFiles) => {
@@ -59,6 +62,7 @@ export const usePickerStore = create((set, get) => ({
       error: "",
       currentRound: 1,
       tournamentComplete: false,
+      tournamentStarted: false,
       history: [],
     });
 
@@ -92,6 +96,7 @@ export const usePickerStore = create((set, get) => ({
       error: "",
       currentRound: 1,
       tournamentComplete: false,
+      tournamentStarted: false,
       history: [],
     });
   },
