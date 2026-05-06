@@ -339,10 +339,13 @@ export const usePickerStore = create((set, get) => ({
     if (selected.length === images.length) {
       return;
     }
+    if (targetCount > 0 && selected.length < targetCount) {
+      return;
+    }
 
     get().pushHistory();
 
-    const completed = targetCount > 0 && selected.length <= targetCount;
+    const completed = targetCount > 0 && selected.length === targetCount;
     const nextImages = selected.map((image) => ({
       ...image,
       selected: completed,

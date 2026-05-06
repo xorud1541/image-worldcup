@@ -600,7 +600,7 @@ function App() {
                 </button>
               ) : null}
               {(currentPage < totalPages - 1 ||
-                (!tournamentComplete && selectedCount >= 1 && selectedCount < images.length)) ? (
+                (!tournamentComplete && selectedCount >= targetCount && selectedCount < images.length)) ? (
                 <button
                   className="edge-arrow right"
                   type="button"
