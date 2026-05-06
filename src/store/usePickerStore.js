@@ -166,10 +166,26 @@ export const usePickerStore = create((set, get) => ({
   },
 
   nextPage: () => {
-    get().setPage(get().currentPage + 1);
+    if (!get().tournamentStarted) {
+      return;
+    }
+
+    const { currentPage, images, gridSize } = get();
+    const totalPages = Math.max(1, Math.ceil(images.length / gridSize));
+    const lastPage = totalPages - 1;
+
+    if (currentPage < lastPage) {
+      get().setPage(currentPage + 1);
+      return;
+    }
+
+    get().advanceRound();
   },
 
   previousPage: () => {
+    if (!get().tournamentStarted) {
+      return;
+    }
     get().setPage(get().currentPage - 1);
   },
 
@@ -195,6 +211,9 @@ export const usePickerStore = create((set, get) => ({
   },
 
   toggleByVisibleIndex: (visibleIndex) => {
+    if (!get().tournamentStarted) {
+      return;
+    }
     if (get().tournamentComplete) {
       return;
     }
@@ -216,6 +235,9 @@ export const usePickerStore = create((set, get) => ({
   },
 
   selectAll: () => {
+    if (!get().tournamentStarted) {
+      return;
+    }
     if (get().tournamentComplete) {
       return;
     }
@@ -246,6 +268,9 @@ export const usePickerStore = create((set, get) => ({
   },
 
   clearSelections: () => {
+    if (!get().tournamentStarted) {
+      return;
+    }
     if (get().tournamentComplete) {
       return;
     }
@@ -295,6 +320,9 @@ export const usePickerStore = create((set, get) => ({
   },
 
   advanceRound: () => {
+    if (!get().tournamentStarted) {
+      return;
+    }
     const { images, targetCount, tournamentComplete } = get();
     if (tournamentComplete) {
       return;
@@ -329,6 +357,9 @@ export const usePickerStore = create((set, get) => ({
   },
 
   toggleLoupe: () => {
+    if (!get().tournamentStarted) {
+      return;
+    }
     if (get().getVisibleImages().length === 0) {
       return;
     }
