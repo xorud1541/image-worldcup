@@ -368,6 +368,17 @@ export const usePickerStore = create((set, get) => ({
     set({ loupeOpen: !get().loupeOpen });
   },
 
+  openLoupeAt: (visibleIndex) => {
+    if (!get().tournamentStarted) {
+      return;
+    }
+    const visibleImages = get().getVisibleImages();
+    if (!visibleImages[visibleIndex]) {
+      return;
+    }
+    set({ focusedIndex: visibleIndex, loupeOpen: true });
+  },
+
   closeLoupe: () => set({ loupeOpen: false }),
 
   exportZip: async () => {
