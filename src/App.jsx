@@ -265,7 +265,7 @@ function App() {
                 Round {currentRound}
               </span>
               <span className="round-info">
-                풀 {images.length}장 → 목표 {targetCount}장
+                총 {images.length}장 · 선택 {selectedCount}장
               </span>
             </div>
           ) : null}
@@ -520,22 +520,27 @@ function App() {
                 ))}
               </div>
 
-              <button
-                className="edge-arrow left"
-                type="button"
-                onClick={previousPage}
-                aria-label="이전 페이지"
-              >
-                ‹
-              </button>
-              <button
-                className="edge-arrow right"
-                type="button"
-                onClick={nextPage}
-                aria-label="다음 페이지"
-              >
-                ›
-              </button>
+              {currentPage > 0 ? (
+                <button
+                  className="edge-arrow left"
+                  type="button"
+                  onClick={previousPage}
+                  aria-label="이전 페이지"
+                >
+                  ‹
+                </button>
+              ) : null}
+              {(currentPage < totalPages - 1 ||
+                (!tournamentComplete && selectedCount >= 1 && selectedCount < images.length)) ? (
+                <button
+                  className="edge-arrow right"
+                  type="button"
+                  onClick={nextPage}
+                  aria-label="다음 페이지"
+                >
+                  ›
+                </button>
+              ) : null}
 
               <div className="page-indicator">
                 {currentPage + 1} / {totalPages}
