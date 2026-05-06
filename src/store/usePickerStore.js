@@ -275,6 +275,25 @@ export const usePickerStore = create((set, get) => ({
     set({ images: nextImages });
   },
 
+  startTournament: () => {
+    const { images, targetCount, tournamentStarted } = get();
+    if (tournamentStarted) {
+      return;
+    }
+    if (images.length === 0) {
+      return;
+    }
+    if (targetCount <= 0 || targetCount >= images.length) {
+      return;
+    }
+    get().pushHistory();
+    set({
+      tournamentStarted: true,
+      currentPage: 0,
+      focusedIndex: 0,
+    });
+  },
+
   advanceRound: () => {
     const { images, targetCount, tournamentComplete } = get();
     if (tournamentComplete) {
