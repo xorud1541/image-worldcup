@@ -15,7 +15,6 @@
 
 body {
   margin: 0;
-  min-width: 1024px;
   min-height: 100vh;
   background: #fafafa;
 }
@@ -828,4 +827,88 @@ kbd {
 .round-info {
   font-size: 13px;
   color: #4a4a4a;
+}
+
+@media (max-width: 768px) {
+  .topbar {
+    padding: 0 12px;
+    height: 52px;
+  }
+
+  .brand {
+    font-size: 13px;
+  }
+
+  /* progress 영역의 desktop min-width 320 제거 — 모바일 좁은 폭 적응 */
+  .progress {
+    min-width: 0;
+    gap: 8px;
+  }
+
+  .round-info {
+    font-size: 12px;
+  }
+
+  .round-badge {
+    font-size: 11px;
+    padding: 2px 8px;
+  }
+
+  /* 직접 select/clear 버튼 숨김 — ⋯ 메뉴 경로로 대체 */
+  .topbar-right .topbar-action {
+    display: none;
+  }
+
+  /* 그리드 토글은 모바일에서 숨김 — 기본 그리드 사이즈 사용, 데스크탑에서 변경 권장 */
+  .grid-toggle {
+    display: none;
+  }
+
+  /* edge-arrow 가시성 + 터치 친화적 크기 — desktop 의 hover 의존 (opacity:0) 회피 */
+  .edge-arrow {
+    opacity: 1;
+    width: 44px;
+    height: 44px;
+    font-size: 24px;
+  }
+
+  .grid-pill {
+    min-width: 32px;
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+
+  .pre-tournament {
+    padding: 16px 12px;
+    gap: 12px;
+  }
+
+  .pre-tournament h2 {
+    font-size: 16px;
+  }
+
+  .complete-banner {
+    margin: 8px;
+    padding: 12px;
+  }
+
+  .complete-title {
+    font-size: 14px;
+  }
+
+  .round-toast {
+    top: 64px;
+    font-size: 13px;
+    padding: 10px 18px;
+  }
+
+  .empty {
+    padding: 20px;
+    gap: 8px;
+  }
+
+  .app-footer {
+    font-size: 11px;
+    padding: 6px 12px;
+  }
 }
