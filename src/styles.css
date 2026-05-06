@@ -69,16 +69,11 @@ input {
   gap: 8px;
 }
 
-.brand-link {
-  display: inline-flex;
-  align-items: center;
-  text-decoration: none;
-}
-
-.brand-logo {
-  height: 28px;
-  width: auto;
-  display: block;
+.brand {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1a1a;
+  letter-spacing: 0.01em;
 }
 
 .progress {
@@ -899,8 +894,8 @@ kbd {
     height: 52px;
   }
 
-  .brand-logo {
-    height: 22px;
+  .brand {
+    font-size: 13px;
   }
 
   /* progress 영역의 desktop min-width 320 제거 — 모바일 좁은 폭 적응 */
